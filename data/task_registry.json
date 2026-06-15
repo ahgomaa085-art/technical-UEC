@@ -1,0 +1,38 @@
+[
+    {
+        "desc": "Verify Lead IP logs",
+        "demander": "Dr. Sarah",
+        "label": "Bug",
+        "target": "home",
+        "targetLabel": "News & Events",
+        "targetTitle": "University Homepage > News & Events",
+        "comment": "Sample entry for team coordination.",
+        "img": "",
+        "status": "pending",
+        "time": "6/10/2026, 7:45:33 AM"
+    },
+    {
+        "desc": "Audit Hero Spacing",
+        "demander": "Lead UI",
+        "label": "UI/Layout",
+        "target": "home",
+        "targetLabel": "Hero Section",
+        "targetTitle": "University Homepage > Hero Section",
+        "comment": "Needs 20px extra padding on mobile.",
+        "img": "",
+        "status": "pending",
+        "time": "6/10/2026, 7:22:22 AM"
+    },
+    {
+        "desc": "Archive Test Runner",
+        "demander": "System",
+        "label": "Asset",
+        "target": null,
+        "targetLabel": "",
+        "targetTitle": "Global Reference",
+        "comment": "Verified soft-delete archive logic.",
+        "img": "",
+        "status": "deleted",
+        "time": "6/10/2026, 7:55:10 AM"
+    }
+]

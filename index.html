@@ -1,0 +1,2346 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UEC Website Technical Atlas (Blueprint v2.0)</title>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=Playfair+Display:ital,wght@1,700&display=swap"
+        rel="stylesheet">
+    <style>
+        :root {
+            --navy: #0A1F3C;
+            --gold: #D4AF37;
+            --light-bg: #F1F5F9;
+            --border: #E2E8F0;
+            --text-main: #1E293B;
+            --wireframe-bg: #F8FAFC;
+            --wireframe-stroke: #CBD5E0;
+            --highlight: #FEF3C7;
+        }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            margin: 0;
+            background: var(--light-bg);
+            color: var(--text-main);
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+        }
+
+        /* Sidebar Architecture */
+        .sidebar {
+            width: 320px;
+            background: var(--navy);
+            color: white;
+            padding: 25px;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 4px 0 20px rgba(0, 0, 0, 0.1);
+            z-index: 1000;
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        /* Responsive Sidebar */
+        @media (max-width: 1024px) {
+            .sidebar {
+                position: fixed;
+                top: 0;
+                left: 0;
+                bottom: 0;
+                transform: translateX(-100%);
+            }
+
+            .sidebar.active {
+                transform: translateX(0);
+            }
+
+            .sidebar-overlay {
+                display: none;
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background: rgba(0, 0, 0, 0.5);
+                z-index: 999;
+            }
+
+            .sidebar-overlay.active {
+                display: block;
+            }
+        }
+
+        .sidebar-header h1 {
+            font-size: 1.4rem;
+            color: var(--gold);
+            margin: 0 0 5px 0;
+        }
+
+        /* v2.5 Task Detail Modal */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(15, 23, 42, 0.85);
+            backdrop-filter: blur(8px);
+            z-index: 10000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            background: white;
+            width: 90%;
+            max-width: 900px;
+            max-height: 90vh;
+            border-radius: 12px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            overflow-y: auto;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .modal-header {
+            padding: 20px 30px;
+            border-bottom: 1px solid #E2E8F0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: var(--navy);
+            color: white;
+        }
+
+        .modal-body {
+            padding: 30px;
+            flex: 1;
+        }
+
+        .detail-img {
+            width: 100%;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border: 1px solid #E2E8F0;
+            background: #f8fafc;
+        }
+
+        .detail-meta {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 20px;
+            font-size: 0.9rem;
+            color: #64748B;
+            border-bottom: 1px solid #F1F5F9;
+            padding-bottom: 15px;
+        }
+
+        .edit-area {
+            width: 100%;
+            min-height: 120px;
+            padding: 12px;
+            border: 1px solid #CBD5E1;
+            border-radius: 6px;
+            font-family: inherit;
+            margin-bottom: 15px;
+        }
+
+        .save-btn {
+            background: var(--navy);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 1.5rem;
+            cursor: pointer;
+        }
+
+        .import-btn {
+            background: #10B981 !important;
+            color: white !important;
+        }
+
+        .sidebar-header p {
+            font-size: 0.75rem;
+            opacity: 0.5;
+            margin-bottom: 20px;
+        }
+
+        .nav-group {
+            margin-bottom: 25px;
+            overflow-y: auto;
+        }
+
+        .nav-label {
+            font-size: 0.7rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: rgba(255, 255, 255, 0.4);
+            margin-bottom: 10px;
+            display: block;
+        }
+
+        .nav-item {
+            display: block;
+            color: rgba(255, 255, 255, 0.7);
+            text-decoration: none;
+            padding: 10px 15px;
+            font-size: 0.9rem;
+            border-radius: 6px;
+            transition: 0.2s;
+            margin-bottom: 2px;
+            cursor: pointer;
+        }
+
+        .nav-item:hover {
+            background: rgba(255, 255, 255, 0.05);
+            color: white;
+        }
+
+        .nav-item.active {
+            background: var(--gold);
+            color: var(--navy);
+            font-weight: 800;
+        }
+
+        /* Main Workspace */
+        .workspace {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .top-bar {
+            background: white;
+            padding: 15px 40px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .view-switcher {
+            display: flex;
+            gap: 10px;
+            background: #F1F5F9;
+            padding: 4px;
+            border-radius: 8px;
+        }
+
+        .view-btn {
+            padding: 8px 20px;
+            font-size: 0.85rem;
+            font-weight: 700;
+            cursor: pointer;
+            border-radius: 6px;
+            transition: 0.3s;
+        }
+
+        .view-btn.active {
+            background: white;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            color: var(--navy);
+        }
+
+        /* Responsive View Switcher */
+        @media (max-width: 768px) {
+            .top-bar {
+                position: relative;
+            }
+
+            .view-switcher {
+                width: 100%;
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+                white-space: nowrap;
+                justify-content: flex-start;
+                padding: 10px 6px;
+                scrollbar-width: none;
+                mask-image: linear-gradient(to right, black 85%, transparent 100%);
+            }
+
+            .view-switcher::-webkit-scrollbar {
+                display: none;
+            }
+
+            .view-btn {
+                padding: 12px 24px;
+                font-size: 0.8rem;
+                flex: 0 0 auto;
+                margin-right: 8px;
+                background: white;
+                border: 1px solid var(--border);
+                box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+            }
+        }
+
+        .search-container {
+            width: 400px;
+            position: relative;
+        }
+
+        .global-search {
+            width: 100%;
+            padding: 10px 15px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            outline: none;
+            font-family: inherit;
+        }
+
+        /* Content Areas */
+        .content-scroll {
+            flex: 1;
+            overflow-y: auto;
+            padding: 40px;
+        }
+
+        /* Wireframe Engine */
+        .wf-stage {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: white;
+            padding: 40px;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.08);
+            border-radius: 12px;
+            border: 1px solid var(--border);
+        }
+
+        .wf-block {
+            border: 2px dashed var(--wireframe-stroke);
+            background: var(--wireframe-bg);
+            margin-bottom: 20px;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+            font-size: 0.75rem;
+            color: #94A3B8;
+            cursor: help;
+            transition: 0.2s;
+            text-transform: uppercase;
+        }
+
+        .wf-block:hover {
+            border-color: var(--gold);
+            border-style: solid;
+        }
+
+        .wf-block.highlighted {
+            border-color: #F87171;
+            border-style: solid;
+            box-shadow: 0 0 15px rgba(248, 113, 113, 0.3);
+        }
+
+        /* v2.2: Button Imitation Styles */
+        .wf-block-container {
+            position: relative;
+            margin-bottom: 20px;
+        }
+
+        .wf-item {
+            position: absolute;
+            width: 140px;
+            height: 35px;
+            background: rgba(212, 175, 55, 0.15);
+            border: 2px solid var(--gold);
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.65rem;
+            color: var(--navy);
+            font-weight: 800;
+            cursor: crosshair;
+            z-index: 10;
+            transition: 0.2s;
+            text-transform: none;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .wf-item:hover {
+            background: var(--gold);
+            color: var(--navy);
+            transform: scale(1.05);
+            box-shadow: 0 6px 18px rgba(212, 175, 55, 0.4);
+        }
+
+        .wf-item-dot {
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            background: var(--gold);
+            border: 2px solid white;
+            position: absolute;
+            cursor: help;
+            transition: 0.2s;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+        }
+
+        .wf-item-dot:hover {
+            transform: scale(1.5);
+            background: #F59E0B;
+        }
+
+        /* Dictionary Engine */
+        .dict-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 20px;
+        }
+
+        .dict-card {
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            transition: 0.3s;
+        }
+
+        .dict-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.05);
+        }
+
+        .dict-title {
+            font-weight: 800;
+            color: var(--navy);
+            display: block;
+            margin-bottom: 12px;
+            font-size: 1.1rem;
+        }
+
+        .dict-tag {
+            font-size: 0.65rem;
+            background: var(--navy);
+            color: white;
+            padding: 2px 8px;
+            border-radius: 4px;
+            vertical-align: middle;
+            margin-left: 8px;
+        }
+
+        .spec-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-size: 0.85rem;
+            border-bottom: 1px solid var(--light-bg);
+            padding-bottom: 4px;
+        }
+
+        .spec-key {
+            font-weight: 600;
+            color: #64748B;
+        }
+
+        .spec-val {
+            color: var(--text-main);
+            text-align: right;
+        }
+
+        .jump-btn {
+            display: block;
+            width: 100%;
+            margin-top: 15px;
+            padding: 8px;
+            background: var(--light-bg);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            text-align: center;
+            font-weight: 700;
+            font-size: 0.75rem;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .jump-btn:hover {
+            background: var(--gold);
+            color: var(--navy);
+            border-color: var(--gold);
+        }
+
+        /* Tooltip */
+        .tooltip {
+            position: absolute;
+            background: var(--navy);
+            color: white;
+            padding: 15px;
+            border-radius: 8px;
+            font-size: 0.8rem;
+            z-index: 1000;
+            width: 250px;
+            pointer-events: none;
+            display: none;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.3);
+        }
+
+        .tooltip-header {
+            color: var(--gold);
+            font-weight: 800;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+            padding-bottom: 5px;
+            margin-bottom: 8px;
+            display: block;
+        }
+
+        /* Database Connection Badge */
+        .db-badge {
+            font-size: 0.65rem;
+            padding: 4px 8px;
+            border-radius: 20px;
+            margin-left: 10px;
+            font-weight: 800;
+        }
+
+        .db-online {
+            background: #10B981;
+            color: white;
+        }
+
+        .db-offline {
+            background: #F87171;
+            color: white;
+        }
+
+        /* Mobile Menu Toggle */
+        .mobile-toggle {
+            display: none;
+            background: var(--navy);
+            color: white;
+            border: none;
+            padding: 10px;
+            border-radius: 6px;
+            cursor: pointer;
+            margin-right: 15px;
+            box-shadow: 0 4px 12px rgba(10, 31, 60, 0.2);
+        }
+
+        .sidebar-close {
+            display: none;
+            background: var(--gold);
+            border: none;
+            color: var(--navy);
+            font-size: 24px;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            cursor: pointer;
+            z-index: 1001;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            font-weight: 800;
+        }
+
+        @media (max-width: 1024px) {
+
+            .mobile-toggle,
+            .sidebar-close {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+
+            .top-bar {
+                padding: 15px 20px;
+            }
+
+            .search-container {
+                width: 100%;
+                max-width: none;
+                margin-top: 10px;
+            }
+
+            .top-bar {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .top-bar-left {
+                display: flex;
+                align-items: center;
+                width: 100%;
+                justify-content: space-between;
+                margin-bottom: 5px;
+            }
+
+            .content-scroll {
+                padding: 15px;
+            }
+
+            .wf-stage {
+                padding: 15px;
+                border-radius: 8px;
+                overflow-x: auto;
+            }
+
+            .dict-grid {
+                grid-template-columns: 1fr;
+                gap: 15px;
+            }
+
+            .dict-card {
+                padding: 20px;
+            }
+
+            .modal-content {
+                width: 95%;
+                max-height: 85vh;
+            }
+
+            .modal-body {
+                padding: 20px;
+            }
+
+            /* Professional Mobile Buttons */
+            .save-btn,
+            .jump-btn,
+            .import-btn {
+                padding: 15px !important;
+                font-size: 0.9rem !important;
+                min-height: 48px;
+                /* Touch target safety */
+            }
+        }
+
+        /* Table Responsiveness */
+        .table-responsive {
+            width: 100%;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+    </style>
+    <!-- Firebase SDK (Compat Mode) -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-storage-compat.js"></script>
+    <!-- jsPDF & AutoTable CDNs for report generation -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.29/jspdf.plugin.autotable.min.js"></script>
+</head>
+
+<body>
+
+    <div class="sidebar-overlay" id="sidebar-overlay" onclick="toggleMobileSidebar()"></div>
+    <div class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <h1 style="display: flex; align-items: center; gap: 8px;">
+                UEC Atlas
+                <button class="sidebar-close" onclick="toggleMobileSidebar()">×</button>
+            </h1>
+            <p>Master Technical Blueprint v2.6 <!-- Deployment Sync --></p>
+        </div>
+
+        <div class="nav-group">
+            <span class="nav-label">Core Navigation</span>
+            <div id="nav-core"></div>
+        </div>
+
+        <div class="nav-group">
+            <span class="nav-label">9 Prestigious Faculties</span>
+            <div id="nav-faculty"></div>
+        </div>
+
+        <div class="nav-group">
+            <span class="nav-label">Admissions & Student Life</span>
+            <div id="nav-support"></div>
+        </div>
+
+        <div class="nav-group">
+            <span class="nav-label">Technical Registry</span>
+            <div id="nav-admin"></div>
+        </div>
+
+        <div
+            style="margin-top: auto; padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.1); font-size: 0.7rem; opacity: 0.4;">
+            Site Total: 32 Integrated Pages<br>
+            All Specs Unified & Locally Hosted
+        </div>
+    </div>
+
+    <div class="workspace">
+        <div class="top-bar">
+            <div class="top-bar-left">
+                <button class="mobile-toggle" onclick="toggleMobileSidebar()">☰</button>
+                <div class="view-switcher">
+                    <div class="view-btn active" id="btn-wire" onclick="setView('wire')">Visual Wireframe</div>
+                    <div class="view-btn" id="btn-dict" onclick="setView('dict')">Technical Dictionary</div>
+                    <div class="view-btn" id="btn-log" onclick="setView('log')">Technical Task Log</div>
+                    <div class="view-btn" id="btn-hist" onclick="setView('hist')">Task History (Full)</div>
+                </div>
+            </div>
+            <div class="search-container">
+                <input type="text" id="globalSearch" class="global-search"
+                    placeholder="Search buttons, sections, or files (e.g. 'hotline', 'banner')"
+                    onkeyup="handleSearch(this.value)">
+            </div>
+        </div>
+
+        <div class="content-scroll">
+
+            <!-- View Area: Generated by JS -->
+            <div id="viewport">
+                <div id="wireframe-view" class="active">
+                    <h2 id="page-title" style="font-size: 1.8rem; margin-bottom: 5px;">Homepage</h2>
+                    <p id="page-path" style="font-size: 0.85rem; color: #64748B; margin-bottom: 30px;">src/app/page.tsx
+                    </p>
+                    <div class="wf-stage" id="stage"></div>
+                </div>
+
+                <div id="dictionary-view" style="display: none;">
+                    <h2 style="font-size: 1.8rem; margin-bottom: 30px;">Project Technical Specs</h2>
+                    <div class="dict-grid" id="dict-grid"></div>
+                </div>
+
+                <div id="task-log-view" style="display: none;">
+                    <div
+                        style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; flex-wrap: wrap; gap: 10px;">
+                        <h2 style="margin:0; display:flex; align-items:center;">
+                            Technical Execution Logs
+                            <span id="db-status" class="db-badge db-offline">FIREBASE: DISCONNECTED</span>
+                        </h2>
+                        <div style="display:flex; gap:10px; align-items: center;">
+                            <button onclick="document.getElementById('importFile').click()" class="import-btn"
+                                style="padding:8px 16px; border-radius:6px; border:none; font-weight:700; cursor:pointer;">Import
+                                Logs</button>
+                            <input type="file" id="importFile" style="display:none" onchange="importTasks(event)">
+                            <button onclick="exportTasks()"
+                                style="padding:8px 16px; border-radius:6px; border:1px solid var(--navy); background:none; font-weight:700; cursor:pointer;">Export
+                                JSON</button>
+                            <button onclick="exportTasksCSV()"
+                                style="padding:8px 16px; border-radius:6px; background:var(--gold); border:none; color:var(--navy); font-weight:700; cursor:pointer;">Export
+                                CSV</button>
+                        </div>
+                    </div>
+
+                    <div class="task-form"
+                        style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:15px; margin-bottom:25px; background:#f8fafc; padding:20px; border-radius:8px; border:1px solid #E2E8F0;">
+                        <div>
+                            <label
+                                style="display:block; font-size:0.75rem; font-weight:700; margin-bottom:5px;">DEMANDER
+                                *</label>
+                            <input type="text" id="taskDemander" placeholder="Who is asking?">
+                        </div>
+                        <div>
+                            <label
+                                style="display:block; font-size:0.75rem; font-weight:700; margin-bottom:5px;">CATEGORY /
+                                LABEL *</label>
+                            <select id="taskLabel">
+                                <option value="UI/Layout">UI/Layout</option>
+                                <option value="JS/Logic">JS/Logic</option>
+                                <option value="Content">Content</option>
+                                <option value="Bug">Bug</option>
+                                <option value="Asset">Asset</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label style="display:block; font-size:0.75rem; font-weight:700; margin-bottom:5px;">TARGET
+                                REFERENCE</label>
+                            <select id="taskTarget">
+                                <option value="">Global / General Site</option>
+                            </select>
+                        </div>
+                        <div style="grid-column: span 2;">
+                            <label
+                                style="display:block; font-size:0.75rem; font-weight:700; margin-bottom:5px;">DESCRIPTION
+                                *</label>
+                            <input type="text" id="taskDesc" placeholder="What needs to be done?">
+                        </div>
+                        <div style="grid-column: span 3;">
+                            <label style="display:block; font-size:0.75rem; font-weight:700; margin-bottom:5px;">ATTACHMENTS (OPTIONAL - MULTIPLE FILES & ANY TYPE SUPPORTED)</label>
+                            <div class="attachment-zone" id="dropZone" 
+                                 style="border: 2px dashed var(--border); padding: 18px; border-radius: 8px; text-align: center; background: #fff; cursor: pointer; transition: 0.2s;"
+                                 onclick="document.getElementById('taskFiles').click()"
+                                 ondragover="event.preventDefault(); this.style.borderColor = 'var(--gold)'; this.style.background = '#EEF5FC';"
+                                 ondragleave="this.style.borderColor = 'var(--border)'; this.style.background = '#fff';"
+                                 ondrop="handleFileDrop(event)">
+                                <span style="font-size: 0.85rem; color: var(--muted); font-weight: 600;">
+                                    Drag & drop files here or <span style="color: var(--navy); text-decoration: underline;">browse files</span>
+                                </span>
+                                <input type="file" id="taskFiles" multiple style="display: none;" onchange="handleFileSelection(event)">
+                            </div>
+                            <div id="selected-files-list" style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px;"></div>
+                        </div>
+                        <div style="grid-column: span 3;">
+                            <textarea id="taskComment" style="width:100%; min-height:60px; padding:10px;"
+                                placeholder="Optional technical notes..."></textarea>
+                        </div>
+                        <button class="save-btn" style="grid-column: span 3; padding:12px;" onclick="addTask()">ADD
+                            TECHNICAL TASK TO REGISTRY</button>
+                    </div>
+
+                    <div class="log-container">
+                        <div class="table-responsive">
+                            <table class="task-table">
+                                <thead>
+                                    <tr>
+                                        <th>Status</th>
+                                        <th>Time</th>
+                                        <th>Task Description</th>
+                                        <th>Target</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="task-list"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="task-history-view" style="display: none;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; flex-wrap: wrap; gap: 10px;">
+                        <h2 style="margin:0">Master Task History</h2>
+                        <div style="display:flex; gap:10px; align-items: center; flex-wrap: wrap;">
+                            <!-- Date Filter -->
+                            <div style="display: flex; gap: 8px; align-items: center; background: #EEF5FC; padding: 6px 12px; border-radius: 8px; border: 1px solid var(--border);">
+                                <label style="font-size: 0.75rem; font-weight: 700; color: var(--navy); margin: 0;">Filter Day:</label>
+                                <input type="date" id="history-filter-date" onchange="renderHistoryGrouped()" style="font-size: 0.75rem; padding: 4px; border-radius: 4px; border: 1px solid var(--border); outline: none; background: white; color: var(--navy); font-weight: 700;">
+                                <button onclick="clearHistoryDateFilter()" style="font-size: 0.7rem; background: var(--navy); color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-weight: 700; transition: 0.2s;">Clear</button>
+                            </div>
+                            <button onclick="exportTasks()"
+                                style="padding:8px 16px; border-radius:6px; border:1px solid var(--navy); background:none; font-weight:700; cursor:pointer;">Export JSON</button>
+                            
+                            <!-- Dropdown Report Export Button -->
+                            <div class="dropdown-export" style="position: relative; display: inline-block;">
+                                <button onclick="toggleExportDropdown(event)" id="exportReportBtn"
+                                    style="padding:8px 16px; border-radius:6px; background:var(--gold); border:none; color:var(--navy); font-weight:700; cursor:pointer; display: flex; align-items: center; gap: 6px; transition: 0.2s;">
+                                    Export Ready Report ▾
+                                </button>
+                                <div id="exportDropdown" style="display: none; position: absolute; right: 0; background: white; min-width: 220px; box-shadow: 0 8px 24px rgba(78, 64, 153, 0.15); border: 1px solid var(--border); border-radius: 8px; z-index: 1100; padding: 6px 0; margin-top: 5px;">
+                                    <span style="display:block; padding: 6px 12px; font-size: 0.65rem; color: #64748B; font-weight: 800; border-bottom: 1px solid #EEF2F6; text-transform: uppercase; letter-spacing: 0.5px;">Daily Report (Selected Day)</span>
+                                    <a onclick="exportReport('daily', 'pdf')" style="display:block; padding: 10px 16px; font-size: 0.8rem; color: var(--navy); cursor: pointer; text-decoration: none; font-weight: 700;" onmouseover="this.style.background='#EEF5FC'" onmouseout="this.style.background='none'">PDF Document (.pdf)</a>
+                                    <a onclick="exportReport('daily', 'word')" style="display:block; padding: 10px 16px; font-size: 0.8rem; color: var(--navy); cursor: pointer; text-decoration: none; font-weight: 700; border-bottom: 1px solid #EEF2F6;" onmouseover="this.style.background='#EEF5FC'" onmouseout="this.style.background='none'">Word Document (.doc)</a>
+                                    
+                                    <span style="display:block; padding: 6px 12px; font-size: 0.65rem; color: #64748B; font-weight: 800; border-bottom: 1px solid #EEF2F6; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 6px;">Weekly Report (All Active)</span>
+                                    <a onclick="exportReport('weekly', 'pdf')" style="display:block; padding: 10px 16px; font-size: 0.8rem; color: var(--navy); cursor: pointer; text-decoration: none; font-weight: 700;" onmouseover="this.style.background='#EEF5FC'" onmouseout="this.style.background='none'">PDF Document (.pdf)</a>
+                                    <a onclick="exportReport('weekly', 'word')" style="display:block; padding: 10px 16px; font-size: 0.8rem; color: var(--navy); cursor: pointer; text-decoration: none; font-weight: 700; border-bottom: 1px solid #EEF2F6;" onmouseover="this.style.background='#EEF5FC'" onmouseout="this.style.background='none'">Word Document (.doc)</a>
+                                    
+                                    <span style="display:block; padding: 6px 12px; font-size: 0.65rem; color: #64748B; font-weight: 800; border-bottom: 1px solid #EEF2F6; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 6px;">Spreadsheet Data</span>
+                                    <a onclick="exportTasksCSV()" style="display:block; padding: 10px 16px; font-size: 0.8rem; color: var(--navy); cursor: pointer; text-decoration: none; font-weight: 700;" onmouseover="this.style.background='#EEF5FC'" onmouseout="this.style.background='none'">Export CSV (.csv)</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Grouped Container replaces static table -->
+                    <div id="history-grouped-container"></div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <div id="tooltip" class="tooltip"></div>
+
+    <!-- v2.5 Task Detail Modal -->
+    <div id="task-detail-overlay" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <span id="modal-title" style="font-weight:700; font-size:1.1rem;">Task Details</span>
+                <button class="close-btn" onclick="closeTaskDetail()">×</button>
+            </div>
+            <div class="modal-body">
+                <div id="modal-img-container" style="display:none;"></div>
+                <label style="display:block; font-size:0.75rem; color:#64748B; font-weight:700; margin-bottom:5px; text-transform:uppercase;">Task Attachments</label>
+                <div id="modal-attachments-container" style="margin-bottom:20px;"></div>
+                <div class="detail-meta">
+                    <div id="modal-status"></div>
+                    <div id="modal-target" style="color:var(--gold); font-weight:700;"></div>
+                    <div id="modal-time"></div>
+                </div>
+
+                <label
+                    style="display:block; font-size:0.75rem; color:#64748B; font-weight:700; margin-bottom:5px; text-transform:uppercase;">Task
+                    Requirements</label>
+                <textarea id="edit-desc" class="edit-area"></textarea>
+
+                <label
+                    style="display:block; font-size:0.75rem; color:#64748B; font-weight:700; margin-bottom:5px; text-transform:uppercase;">Technical
+                    Feedback / Comments</label>
+                <textarea id="edit-comment" class="edit-area"
+                    placeholder="Add technical notes or delivery feedback..."></textarea>
+
+                <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:10px;">
+                    <button class="save-btn" onclick="toggleTaskModal()" style="background:#F59E0B">TOGGLE
+                        STATUS</button>
+                    <button class="save-btn" onclick="saveTaskEdits()">SAVE CHANGES & UPDATE LOG</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // PAGE DATABASE (v2.2 - Button Overhaul & Restoration)
+        // Responsive Mobile Sidebar Toggle
+        function toggleMobileSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('sidebar-overlay');
+            sidebar.classList.toggle('active');
+            overlay.classList.toggle('active');
+        }
+
+        // ── DESIGN SYSTEM (Extracted from real UEC website src/app/globals.css) ──
+        const DESIGN_SYSTEM = {
+            colors: [
+                { token: '--navy', hex: '#4E4099', usage: 'Primary brand, headings, active nav, card bgs' },
+                { token: '--navy2', hex: '#443B97', usage: 'Utility bar bg, footer bg, hero overlay' },
+                { token: '--gold / --gold2', hex: '#D4AF37', usage: 'CTAs, accents, borders, active indicators' },
+                { token: '--gold-lt', hex: '#D4AF37', usage: 'Light gold for hero highlights, card sigs' },
+                { token: '--ink', hex: '#2A2260', usage: 'Body text color on light backgrounds' },
+                { token: '--muted', hex: '#6E65A8', usage: 'Secondary text, nav links, descriptions' },
+                { token: '--light', hex: '#9B94C4', usage: 'Tertiary text, timestamps, meta info' },
+                { token: '--off', hex: '#F7F4EE', usage: 'Warm section backgrounds (news, welcome)' },
+                { token: '--sand', hex: '#EEF5FC', usage: 'Card hover bg, icon wraps, dropdown hover' },
+                { token: '--border', hex: 'rgba(78,64,153,0.15)', usage: 'All borders, dividers, navbar bottom' },
+                { token: 'Table TH', hex: '#4A86E8', usage: 'Tuition table header background (blue)' },
+                { token: 'Discount', hex: '#E53E3E', usage: 'Discount percentage text (red)' },
+                { token: 'WhatsApp', hex: '#25D366', usage: 'WhatsApp CTA button background' }
+            ],
+            fonts: [
+                { name: 'Playfair Display', var: '--font-playfair', weights: '700, 800', usage: 'Hero titles, section headings, faculty names, stat numbers, why-letters, quotes' },
+                { name: 'Lato', var: '--font-lato', weights: '300, 400, 700', usage: 'Body (19px), nav links, buttons, labels, tables, utility bar, footer — PRIMARY' },
+                { name: 'Cormorant Garamond', var: '--font-cormorant', weights: '400, 500, 600', usage: 'Hero eyebrow, president quote, welcome card, decorative serif accents' }
+            ],
+            body: 'font-family: Lato | font-size: 19px | line-height: 1.6 | weight: 400 | color: #2A2260 (--ink) | bg: #FFFFFF'
+        };
+
+        const PAGES = {
+            'home': {
+                title: 'University Homepage', path: 'src/app/page.tsx', cat: 'core',
+                desc: 'Main gateway. High-traffic landing page with dynamic news, virtual tour, and lead-capture modals.',
+                blocks: [
+                    { label: 'Utility Bar', h: 40, spec: 'COMP: UtilityBar (layout.tsx) | BG: #443B97 (--navy2) | TEXT: rgba(255,255,255,0.75) Lato 13px ls:0.3px | PAD: 11px 48px | POSITION: sticky top:0 z:1100 | LEFT: Hotline 17523 + email + WhatsApp links | RIGHT: Address text + Social icons (FB/IG/TT/LI/YT) at rgba(255,255,255,0.45) | HOVER: text-color→#D4AF37 transition 0.2s | SOCIAL-HOVER: color→#D4AF37 | @≤768px: pad 8px 15px flex-wrap center gap:8px | @≤480px: font 11px pad:6px 10px hide-right', items: [{ type: 'btn', label: 'Hotline 17523', x: 8, y: 50, spec: 'TYPE: tel:17523 link | FONT: Lato 13px color:inherit | ICON: phone feather SVG | HOVER: color→#D4AF37' }, { type: 'dot', label: 'Social Icons', x: 92, y: 50, spec: 'ICONS: Facebook, Instagram, TikTok, LinkedIn, YouTube | SIZE: 13px | COLOR: rgba(255,255,255,0.45) | SPACING: margin-left 8px | HOVER: color→#D4AF37' }] },
+                    { label: 'Navbar (Main Header)', h: 100, spec: 'COMP: Navbar.tsx + DropdownMenus | HEIGHT: 100px (80px @≤1200, 70px @≤900) | BG: rgba(255,255,255,0.97) + backdrop-filter:blur(12px) | BORDER-BOTTOM: 1px solid rgba(78,64,153,0.15) | PAD: 0 40px (24px @1200, 16px @900) | BOX-SHADOW: 0 2px 20px rgba(78,64,153,0.08) | POSITION: sticky top:40px z:1000 | LOGO: height 95px auto-width (55px @mobile) | NAV-LINKS: Lato 15px/700 UPPERCASE ls:0.6px color:#6E65A8 height:100% | ACTIVE-STATE: border-bottom 3px solid #D4AF37 color:#4E4099 | DROPDOWN: min-width:240px shadow:0 10px 30px border:1px radius:0 0 4px 4px pad:12px 0 | DROPDOWN-ITEM: Lato 14px/600 pad:10px 24px hover→padL:30px bg:#EEF5FC | TOGGLE-ARROW: 8px opacity:0.5 | @≤900: hamburger 3-bar 24px×2.5px #4E4099 → slide-drawer 85vw max:320px fixed left:0 z:9500 shadow:4px 0 20px | DRAWER-LINKS: pad:14px 24px border-left:3px transparent hover→gold bg:#F7F4EE', items: [{ type: 'btn', label: 'Apply Now', x: 88, y: 50, spec: 'CLASS: nav-cta | BG: #D4AF37 (--gold) | COLOR: #4E4099 (--navy) | FONT: Lato 12px/700 UPPERCASE ls:0.8px | PAD: 11px 22px | RADIUS: 3px | MARGIN-LEFT: 20px | HOVER: translateY(-1px) | ACTION: opens ApplyNowModal | @≤480: font 11px pad:9px 16px | @≤900: hidden (mobile-cta in drawer)' }] },
+                    { label: 'Hero Section', h: 400, spec: 'COMP: Hero.tsx | MIN-HEIGHT: 40vh aspect-ratio:16/9 | BG: #443B97 (--navy2) cover image from /hero/ | OVERLAY: linear-gradient(bottom, rgba(78,64,153, 0.4→0.1→0.7)) + left-gradient(0.8→transparent 60%) | PATTERN: repeating grid 60px lines opacity:0.04 | GOLD-LINE: bottom 3px linear-gradient(transparent→#D4AF37→transparent) | WATERMARK: shield 520×520px opacity:0.04 right:-60px bottom:-80px | CONTENT-PAD: 80px 48px 100px max-width:800px | HERO-BADGE: Lato 10.5px/700 UPPERCASE ls:2.5px bg:rgba(212,175,55,0.15) border:1px rgba(212,175,55,0.3) pad:6px 14px radius:20px mb:28px | HERO-EYEBROW: Cormorant 24px/500 italic color:rgba(255,255,255,0.55) | HERO-TITLE: Playfair clamp(48px,7vw,84px)/800 lh:1.1 color:#FFFFFF text-shadow:0 4px 15px rgba(0,0,0,1) | TITLE-EM: color:#D4AF37 italic | HERO-SUBTITLE: Playfair 1.6rem/900 UPPERCASE ls:5px color:#D4AF37 bg:rgba(10,31,60,0.45) blur(10px) pad:12px 32px radius:0 20px border-left:4px #D4AF37 absolute bottom:5px | SUB-TEXT: Lato 19px/700 lh:1.75 color:rgba(255,255,255,0.95) max-w:650px text-shadow | STATS-BAR: 3-col flex gap:40px border-top:1px rgba(255,255,255,0.1) | STAT-NUM: Playfair 36px/800 #fff | STAT-LABEL: 15px/900 UPPERCASE ls:1.5px | ANIM: fadeInUp stagger 0.6-0.8s ease | SCROLL-HINT: absolute bottom:24px center pulsing arrow | @≤1200: content-pad 60px 32px sub:centered | @≤900: min-h:420px title:clamp(22px,8vw,36px) sub:14px btns:column stats:2-col grid gap:16px | @≤480: title:24px badge:9px btns:100% pad:13px 20px', items: [{ type: 'btn', label: 'Explore Programs', x: 15, y: 78, spec: 'CLASS: btn-hero-primary | BG: #D4AF37 (--gold) | COLOR: #4E4099 (--navy) | FONT: Lato 14.5px/700 UPPERCASE ls:0.8px | PAD: 18px 40px | RADIUS: 3px | BOX-SHADOW: 0 8px 25px rgba(0,0,0,0.5) | HOVER: translateY(-2px) shadow:0 12px 35px | @≤480: width:100% font:12px pad:13px 20px center' }, { type: 'btn', label: 'Virtual Tour', x: 42, y: 78, spec: 'CLASS: btn-hero-secondary | BG: rgba(10,31,60,0.5) + blur(4px) | COLOR: #fff | FONT: Lato 14.5px/700 UPPERCASE ls:0.8px | PAD: 17px 40px | RADIUS: 3px | BORDER: 1.5px solid rgba(255,255,255,0.8) | SHADOW: 0 8px 25px rgba(0,0,0,0.5) text-shadow:0 2px 8px | HOVER: border-white bg-darken shadow-expand | @≤480: width:100% font:12px pad:13px 20px' }] },
+                    { label: 'Admission Guide', h: 180, spec: 'COMP: Welcome.tsx | SECTION-BG: #F7F4EE (--off) | PAD: 80px 48px | LAYOUT: 2-col grid (1.4fr 1fr) gap:48px min-left:250px max:320px | TAG: Lato 13.5px/900 UPPERCASE ls:3px #6E65A8 before-bar:20×2px | TITLE: Playfair clamp(28px,4vw,40px)/800 lh:1.2 #2A2260 | SUB: Lato clamp(16px,1.1vw,20px)/400 lh:1.6 #6E65A8 | QUOTE-CARD: bg:#4E4099 radius:4px pad:40px color:#fff, decorative " Playfair 140px rgba(212,175,55,0.15) | CARD-TEXT: Cormorant 22px/400 italic lh:1.6 rgba(255,255,255,0.9) | CARD-SIG: Lato 11px/700 UPPERCASE ls:1.5px #D4AF37 | VALUES-GRID: 2×2 gap:12px mt:36px | VAL-ITEM: pad:16px bg:#fff border-left:3px #D4AF37 radius:0 4px 4px 0 | VAL-TITLE: 13px/700 #4E4099 | VAL-SUB: 11px #6E65A8 lh:1.5 | LINK-BTNS: flex gap:14px mt:32px wrap | BTN-OUTLINE: border:1.5px #4E4099 12px/700 UPPERCASE ls:0.8px pad:11px 22px radius:3px hover→bg:fill | @≤900: 1-col values:1-col gap:32px', items: [{ type: 'dot', label: 'Apply', x: 15, y: 40, spec: 'ROUTE: /admissions' }, { type: 'dot', label: 'Tuition', x: 32, y: 40, spec: 'ROUTE: /tuition' }, { type: 'dot', label: 'Campus', x: 50, y: 40, spec: 'ROUTE: /about-main#campus' }, { type: 'dot', label: 'Calendar', x: 67, y: 40, spec: 'FILE: AcademicCalendar.pdf' }, { type: 'dot', label: 'Announcements', x: 84, y: 40, spec: 'SCROLL: #news' }] },
+                    { label: 'UEC Faculties', h: 280, spec: 'COMP: SchoolsGrid.tsx | SECTION-BG: #fff pad:90px 48px | HEADER: flex space-between align-end mb:48px gap:24px | GRID: 3-col (1fr×3) gap:1px bg:rgba(78,64,153,0.15) border:1px radius:12px overflow:visible | CARD: aspect-ratio:16/9 bg-image:cover position:relative z:1 radius:12px | CARD-BG: absolute fill transition:transform 0.8s cubic-bezier | CARD-OVERLAY: absolute fill rgba(26,21,60,0.05) | CARD-CONTENT: relative z:2 bg:#4E4099 pad:12px 16px center border-top:2px #D4AF37 | Z-POP-HOVER: scale(1.05) translateY(-5px) z:50 shadow:0 40px 80px rgba(0,0,0,0.5) | SIBLINGS-DIM: scale(0.92) opacity:0.6 blur(0.5px) | BG-HOVER: scale(1.08) | GOLD-BAR: after pseudo w:0→100% h:4px gradient gold bottom | CARD-NAME: Playfair 17px/700 #fff ls:0.6px capitalize | ICON-WRAP: 52×52 bg:#EEF5FC radius:10px hover→bg:#4E4099 scale(1.2) translateY(-5px) | ICON-SVG: 24×24 fill:#4E4099 hover→#D4AF37 | @≤900: 1-col stacked | @≤900: header flex-col align-start', items: [{ type: 'dot', label: 'Medicine', x: 15, y: 30 }, { type: 'dot', label: 'Engineering', x: 50, y: 30 }, { type: 'dot', label: 'CS', x: 85, y: 30 }] },
+                    { label: 'Academic Goals [RESPECT]', h: 240, spec: 'COMP: WhyUEC.tsx | SECTION-BG: #4E4099 (--navy) pad:90px 48px overflow:hidden | BEFORE: radial-gradient ellipse at 80% 50% rgba(78,64,153,0.5)→transparent 60% | TOP-LINE: 3px linear-gradient(transparent→#D4AF37→transparent) | TAG: #D4AF37 ls:3px before-bar:gold | TITLE: #fff Playfair | GRID: 7-col (1fr×7 for R-E-S-P-E-C-T) gap:0 mt:56px bg:rgba(255,255,255,0.05) border:1px rgba(255,255,255,0.08) radius:6px | CARD: pad:clamp(15px,3vw,40px) clamp(10px,2vw,28px) center border-right:1px rgba(255,255,255,0.06) hover→bg:rgba(255,255,255,0.06) | CARD-BEFORE: top 2px gold gradient opacity:0→1 on hover | LETTER: Playfair clamp(24px,4.5vw,56px)/800 #D4AF37 hover→scale(1.1) color:--gold2 | WHY-TITLE: Playfair clamp(11px,1.8vw,22px)/700 #fff mb:clamp(6px,1vw,12px) | WHY-TEXT: clamp(8px,1.1vw,13.5px) lh:1.5 rgba(255,255,255,0.55) fw:300 | @≤900: mobile-view replaces desktop (desktop:none) letters:40px title:18px' },
+                    { label: 'Latest from UEC', h: 300, spec: 'COMP: NewsGrid.tsx | SECTION-BG: #F7F4EE (--off) pad:90px 48px | HEADER: flex space-between align-end mb:48px | GRID: 3-col (1.5fr 1fr 1fr) gap:24px | CARD: bg:#fff radius:4px overflow:hidden cursor:pointer flex-col | CARD-HOVER: translateY(-4px) shadow:0 12px 40px rgba(78,64,153,0.12) | IMG: aspect-ratio:16/9 (featured card:4/5) bg:gradient navy→blue | IMG-OVERLAY: after gradient-to-top rgba(78,64,153,0.5)→transparent | CATEGORY-TAG: bg:#D4AF37 c:#4E4099 Lato 11px/900 UPPERCASE ls:1.8px pad:4px 10px radius:2px margin:18px 18px 0 | TITLE: Playfair 17px/700 #4E4099 lh:1.35 pad:12px 18px (featured:22px) | META: 11px #9B94C4 pad:0 18px 18px mt:auto ls:0.3px | @≤900: 1-col featured-title:17px | @≤900: header flex-col align-start gap:16px', items: [{ type: 'btn', label: 'View All News', x: 80, y: 10, spec: 'ROUTE: /news' }] },
+                    { label: 'Journey/Footer CTA', h: 140, spec: 'COMP: ApplyBand.tsx | BG: linear-gradient(135deg, #D4AF37, #D4AF37 50%, #D4AF37) gold gradient | PAD: 70px 48px | LAYOUT: flex space-between center gap:32px | PATTERN-OVERLAY: repeating -45deg stripes 20px transparent→rgba(255,255,255,0.04) 1px | TAG: 10px/700 UPPERCASE ls:3px #4E4099 opacity:0.6 mb:10px | TITLE: Playfair 36px/800 #4E4099 lh:1.15 | SUB: 15px rgba(78,64,153,0.65) fw:300 mt:8px | BTN-APPLY: bg:#4E4099 c:#fff 13px/700 UPPERCASE ls:1px pad:16px 36px radius:3px | BTN-HOVER: bg:--blue translateY(-1px) | NOTE: 11px rgba(78,64,153,0.55) italic right-align | @≤900: flex-col items-start gap:20px title:24px sub:13px btn-pad:14px 24px font:12px', items: [{ type: 'btn', label: 'Join Our Journey', x: 50, y: 60, spec: 'LOGIC: open-apply-modal' }] },
+                    { label: 'Location/Map', h: 200, spec: 'COMP: Footer (layout.tsx) + Google Maps | FOOTER-BG: #443B97 (--navy2) | PAD: 80px 48px 0 | GRID: 3-col (1.4fr 1fr 1.6fr) gap:32px pb:64px border-bottom:1px rgba(255,255,255,0.1) | BRAND-LOGO: height 110px scale(1.15) mb:24px | FOOTER-DESC: 15px/500 lh:1.8 rgba(255,255,255,0.7) mb:28px | SOCIAL-ICONS: flex gap:12px, 40×40 bg:#D4AF37 c:#4E4099 radius:6px hover→translateY(-3px) bg-transparent border-gold c:gold | COL-HEADING: Lato 16px/800 UPPERCASE ls:1.5px #D4AF37 mb:24px | COL-LINKS: 15px/600 rgba(255,255,255,0.75) hover→color:#D4AF37 pad-left:8px mb:12px | PHONE: 2.2rem/900 #D4AF37 ls:1px text-shadow:0 4px 10px | FOOTER-CTA: bg:#D4AF37 c:#4E4099 15px/800 UPPERCASE pad:16px 36px radius:8px shadow:0 10px 25px rgba(212,175,55,0.25) hover→bg:#fff translateY(-4px) scale(1.02) | MAP: radius:8px border:1px rgba(255,255,255,0.1) shadow:0 4px 15px hover→translateY(-5px) border-color:#D4AF37 | CONTACT-ITEMS: flex align-center gap:12px mb:18px 15px/600 rgba(255,255,255,0.75) | BOTTOM-BAR: pad:32px 0 flex between 13px rgba(255,255,255,0.4) border-top:1px rgba(255,255,255,0.05) | @≤900: grid 1-col pad:36px 16px 0 bottom:col center gap:10px' }
+                ]
+            },
+            'about-main': {
+                title: 'About UEC', path: 'src/app/departments/about-main/page.tsx', cat: 'core',
+                desc: 'Official institutional page containing leadership messages and mission statements.',
+                blocks: [
+                    { label: 'President Message', h: 200, spec: 'COMP: ExecQuote (globals.css) | WRAPPER: bg:#fff pad:70px 50px 50px radius:24px shadow:0 20px 50px rgba(78,64,153,0.08) border-left:8px #D4AF37 margin:60px 0 | ICON: absolute top:-30px left:40px 70×70 bg:#4E4099 c:#D4AF37 radius:50% Playfair 40px shadow | QUOTE-TEXT: Playfair 1.5rem lh:1.6 #4E4099 normal mb:30px | SIGNATURE: border-top:1px rgba(78,64,153,0.1) pt:25px flex-col gap:5px | SIG-NAME: 1.25rem/800 #4E4099 italic | SIG-TITLE: 0.95rem/700 #D4AF37 UPPERCASE ls:1.5px | @≤768px: pad:60px 24px 40px text:1.25rem icon:50×50 30px top:-20px' },
+                    { label: 'Vision & Mission', h: 180, spec: 'COMP: StrategicGrid (globals.css) | GRID: auto-fit minmax(280px,1fr) gap:30px margin:40px 0 | CARD: bg:#fff radius:20px pad:40px shadow:0 10px 30px rgba(78,64,153,0.05) border-bottom:6px #D4AF37 | CARD-HOVER: translateY(-8px) shadow:0 20px 45px border-bottom→#4E4099 | ICON: 2.2rem mb:20px #4E4099 | STRATEGIC-TITLE: 1.8rem/800 #4E4099 mb:15px pb:12px + after-bar 60px×3px #D4AF37 | DESCRIPTION: 1rem lh:1.7 #6E65A8' },
+                    { label: 'Explore Campus', h: 250, spec: 'COMP: CampusExplore.tsx | ANCHOR: #campus | LAYOUT: 2-column grid | CARD-1: Virtual Campus Tour (icon: virtual_tour_new.png, CTA: Watch 360° Tour btn-primary navy) | CARD-2: On-Campus Visit (icon: on_campus_visit_new.png, CTA: Book your Visit btn-primary gold, links to /campus-tour)', items: [{ type: 'btn', label: 'Virtual Tour', x: 25, y: 70, spec: 'TYPE: TourTrigger | BG: var(--navy) | COLOR: #fff' }, { type: 'btn', label: 'Book Visit', x: 75, y: 70, spec: 'ROUTE: /campus-tour | BG: var(--gold) | COLOR: var(--navy)' }] }
+                ]
+            },
+            'admissions': {
+                title: 'Admissions Hub', path: 'src/app/departments/admissions/page.tsx', cat: 'support',
+                desc: 'Synthesis of scholarship info, document checklists, and international applicant guides.',
+                blocks: [
+                    { label: 'Header', h: 180, spec: 'COMP: PageHeader.tsx | BG: /images/hero/hero-2.webp | TITLE: Admissions Hub | BREADCRUMB: Home > Admissions' },
+                    { label: 'Quick Navigation (Admissions Guide)', h: 150, spec: 'UI: 2-column layout | LEFT: tag + title | RIGHT: anchor list (Tuition, Scholarships, Entry Requirements, Documents, International) | ANCHOR: #admission-guide', items: [{ type: 'dot', label: 'Tuition Fees', x: 10, y: 60, spec: 'ANCHOR: #tuition' }, { type: 'dot', label: 'Scholarships', x: 30, y: 60, spec: 'ANCHOR: #scholarships' }, { type: 'dot', label: 'Requirements', x: 50, y: 60, spec: 'ROUTE: /requirements' }, { type: 'dot', label: 'Required Documents', x: 70, y: 60, spec: 'ANCHOR: #official-documents' }, { type: 'dot', label: 'International Students', x: 90, y: 60, spec: 'ANCHOR: #international-students' }] },
+                    { label: 'Tuition & Scholarships Info', h: 200, spec: 'COMP: tuition/page.tsx | CARD: UEC scholarships info, contact hotline 17523 | CTA: Explore Scholarship Programs linking to /tuition#scholarships | ANCHOR: #scholarships', items: [{ type: 'btn', label: 'Scholarships Info', x: 50, y: 60, spec: 'ROUTE: /tuition#scholarships | BG: var(--gold)' }] },
+                    { label: 'Required Official Documents', h: 250, spec: 'UI: portal-rich-content | LIST: General Documents (birth certificate, national ID, passport, 4 photos) + Conscription Papers for Egyptian Males (Form 2 Jund, military ID) | NOTE: Missing documents warning | ANCHOR: #official-documents' },
+                    { label: 'International Students info', h: 150, spec: 'UI: info-card | TEXT: Study in Egypt registration | LINK: admission.study-in-egypt.gov.eg | ANCHOR: #international-students', items: [{ type: 'btn', label: 'Study in Egypt Portal', x: 50, y: 60, spec: 'URL: admission.study-in-egypt.gov.eg' }] },
+                    { label: 'How to Apply & Apply Now', h: 180, spec: 'UI: CTA Box | BG: var(--navy) | TEXT: white | BUTTON: Go to Admission Portal linking to apply.uec.edu.eg | ANCHOR: #how-to-apply', items: [{ type: 'btn', label: 'Go to Admission Portal', x: 50, y: 60, spec: 'URL: apply.uec.edu.eg | BG: var(--gold) | COLOR: var(--navy)' }] }
+                ]
+            },
+            'student-life': {
+                title: 'Student Life', path: 'src/app/departments/student-life/page.tsx', cat: 'support',
+                desc: 'Coverage of campus activities, smart facilities, and student organization services.',
+                blocks: [
+                    { label: 'Header', h: 180, spec: 'COMP: PageHeader.tsx | BG: /images/hero/hero-2.webp | TITLE: Student Life at UEC' },
+                    { label: 'Campus Activities', h: 220, spec: 'COMP: ActivityGallery.tsx | UI: 3-column mosaic grid with lightbox | HOVER: zoom(1.1) overlay-caption | PAD: 60px 48px | TEXT: Playfair 1.5rem' },
+                    { label: 'Smart Campus', h: 180, spec: 'UI: feature-grid | COLUMNS: 4-col auto-fit | ITEMS: High-speed Wi-Fi, Smart labs, Digital library, Attendance system | CARD: bg:#fff border:1px solid #eee pad:24px radius:12px hover→translateY(-4px) shadow' },
+                    { label: 'Student Union', h: 150, spec: 'UI: info-card | BG: var(--navy) | TEXT: white | BUTTON: Join Union btn-primary var(--gold)' }
+                ]
+            },
+            'medicine': { title: 'Faculty of Medicine', path: 'src/app/departments/medicine/page.tsx', cat: 'faculty', desc: 'Premier medical hub. Features vision/mission and detailed clinical program listings.', blocks: [{ label: 'Header', h: 180, spec: 'COMP: PageHeader.tsx | BG: /images/faculties/Medicine_v2.webp + linear-gradient(135deg, rgba(78,64,153,0.8), rgba(68,59,151,0.8)) | PAD: 60px 48px center | TITLE: Playfair clamp(28px,4vw,40px)/800 #fff | SUBTITLE: Lato 16px rgba(255,255,255,0.8) max-w:600px | BREADCRUMB: 13px rgba(255,255,255,0.6) flex gap:8px' }, { label: 'Programs', h: 240, spec: 'COMP: portal-rich-content | SECTION: pad:60px 48px bg:#fff | HEADING: 2rem/800 #4E4099 border-left:5px #D4AF37 pl:15px | PROGRAM-GRID: auto-fit minmax(280px,1fr) gap:20px | PROGRAM-CARD: bg:#fff pad:30px radius:15px shadow:0 10px 30px border-top:5px #4E4099 | CARD-TITLE: 1.3rem/800 #4E4099 | CARD-DESC: 1rem #6E65A8 lh:1.5' }, { label: 'Requirements', h: 150, spec: 'COMP: RequirementsAccordion | ACCORDION: flex-col gap:12px mt:30px | ITEM: border:1px rgba(78,64,153,0.1) radius:12px bg:#fff shadow:0 2px 10px | HEADER: flex align-center gap:16px pad:20px 24px cursor:pointer hover→bg:rgba(78,64,153,0.03) | HEADER-OPEN: bg:#4E4099 c:#fff | BADGE: 42×42 radius:10px bg:rgba(212,175,55,0.12) 1.1rem | CERT-TITLE: 1.15rem/700 #4E4099 (open→#fff) | CHEVRON: 1rem #6E65A8 rotate(180deg) on open | BODY: pad:28px border-top:1px display:none (open→block) | SUBJECT-LIST: li pad:8px 0 8px 28px border-bottom:1px before:✓ #D4AF37/900 | NOTE-BOX: bg:rgba(78,64,153,0.04) border-left:4px #4E4099 radius:8px pad:16px 20px' }] },
+            'dentistry': { title: 'Faculty of Dentistry', path: 'src/app/departments/dentistry/page.tsx', cat: 'faculty', desc: 'Official Dentistry portal.', blocks: [{ label: 'Header', h: 180, spec: 'COMP: PageHeader.tsx | BG: /images/faculties/Dental_v2.webp + linear-gradient(135deg, rgba(78,64,153,0.8), rgba(68,59,151,0.8)) | TITLE: Faculty of Dentistry' }, { label: 'Programs & Clinical Training', h: 220, spec: 'COMP: ProgramAccordions.tsx | DESCRIPTION: Student-centered clinical training and problem-solving pedagogy | HEADING: 2rem/800 #4E4099 border-left:5px #D4AF37' }] },
+            'pharmacy': { title: 'Faculty of Pharmacy', path: 'src/app/departments/pharmacy/page.tsx', cat: 'faculty', desc: 'Clinical pharmacy and pharmaceutical research center.', blocks: [{ label: 'Header', h: 180, spec: 'COMP: PageHeader.tsx | BG: /images/faculties/Pharmacy_v2.webp + linear-gradient(135deg, rgba(78,64,153,0.8), rgba(68,59,151,0.8)) | TITLE: Faculty of Pharmacy' }, { label: 'Programs (PharmD)', h: 220, spec: 'COMP: CoursesGrid.tsx | DESCRIPTION: Clinical pharmacy education matching global standards | GRID: Semesters matrix' }] },
+            'engineering': { title: 'Faculty of Engineering', path: 'src/app/departments/engineering/page.tsx', cat: 'faculty', desc: 'Engineering hub covering multiple disciplines.', blocks: [{ label: 'Header', h: 180, spec: 'COMP: PageHeader.tsx | BG: /images/faculties/Engineering_v2.webp + linear-gradient(135deg, rgba(78,64,153,0.8), rgba(68,59,151,0.8)) | TITLE: Faculty of Engineering' }, { label: 'Programs & Workshops', h: 240, spec: 'UI: gallery-grid | DESCRIPTION: Specialized courses in Mechatronics, Energy, Construction, Design | CARD: bg:#fff pad:30px border-top:5px solid var(--navy) radius:15px' }] },
+            'cs': { title: 'Faculty of Computer Science', path: 'src/app/departments/computer-science/page.tsx', cat: 'faculty', desc: 'Computing and AI center.', blocks: [{ label: 'Header', h: 180, spec: 'COMP: PageHeader.tsx | BG: /images/faculties/Computer Science_v2.webp + linear-gradient(135deg, rgba(78,64,153,0.8), rgba(68,59,151,0.8)) | TITLE: Faculty of Computer Science & IT' }, { label: 'Specializations (SE, AI, IT)', h: 250, spec: 'COMP: SpecsGrid.tsx | SOFTWARE-ENG: 132 CH, Capable of developing software and building info systems | ARTIFICIAL-INTEL: 132 CH, Transforming big data into executable decisions | INFO-TECH: 132 CH, Qualifying graduates to meet technology needs | CARD-STYLE: bg:rgba(78,64,153,0.03) border-top:4px solid var(--gold) radius:12px pad:25px | CURRICULUM: details table with CH, LCT, LAB, TUT' }] },
+            'physical-therapy': { title: 'Faculty of Physical Therapy', path: 'src/app/departments/physical-therapy/page.tsx', cat: 'faculty', desc: 'Rehabilitation and therapy focus.', blocks: [{ label: 'Header', h: 180, spec: 'COMP: PageHeader.tsx | BG: /images/faculties/Physical therapy_v2.webp + linear-gradient(135deg, rgba(78,64,153,0.8), rgba(68,59,151,0.8)) | TITLE: Faculty of Physical Therapy' }, { label: 'Programs (Physical Therapy BDS)', h: 220, spec: 'COMP: CoursesGrid.tsx | DESCRIPTION: 5-year plan + 1 year internship. Preparing graduates as key members of the medical team | CURRICULUM: details table (10 semesters) | CARD-STYLE: bg:rgba(78,64,153,0.03) border-left:5px solid var(--gold) pad:20px radius:12px' }] },
+            'business': { title: 'Faculty of Business', path: 'src/app/departments/business-economics/page.tsx', cat: 'faculty', desc: 'Economics and management studies.', blocks: [{ label: 'Header', h: 180, spec: 'COMP: PageHeader.tsx | BG: /images/faculties/Economy_v2.webp + linear-gradient(135deg, rgba(78,64,153,0.8), rgba(68,59,151,0.8)) | TITLE: Faculty of Business & Economics' }, { label: 'Programs (Marketing, Entrepreneurship, BIS)', h: 250, spec: 'UI: insight-cards | MARKETING: 134 CH, creating a new generation of marketing leaders | ENTREPRENEURSHIP: 132 CH, developing strategic plans and business models | BUS-INFO-SYS: 132 CH, data analytics, simulation, hotel info systems | CARD-STYLE: bg:rgba(78,64,153,0.03) border-top:4px solid var(--gold) radius:12px pad:25px' }] },
+            'art-design': { title: 'Faculty of Art & Design', path: 'src/app/departments/art-design/page.tsx', cat: 'faculty', desc: 'Creative arts and architectural design.', blocks: [{ label: 'Header', h: 180, spec: 'COMP: PageHeader.tsx | BG: /images/faculties/Arts_v2.webp + linear-gradient(135deg, rgba(78,64,153,0.8), rgba(68,59,151,0.8)) | TITLE: Faculty of Art & Design' }, { label: 'Creative Programs', h: 200, spec: 'UI: portfolio-view | DESCRIPTION: Fine Arts, Interior Design, Fashion, Graphics, Animation | CARD: border-top:5px solid var(--navy) pad:30px bg:#fff radius:15px' }] },
+            'mass-comm': { title: 'Faculty of Mass Comm', path: 'src/app/departments/mass-communication/page.tsx', cat: 'faculty', desc: 'Media labs and broadcasting studies.', blocks: [{ label: 'Header', h: 180, spec: 'COMP: PageHeader.tsx | BG: /images/faculties/Mass communication_v2.webp + linear-gradient(135deg, rgba(78,64,153,0.8), rgba(68,59,151,0.8)) | TITLE: Faculty of Mass Communication' }, { label: 'Media Programs', h: 200, spec: 'UI: video-reel-player | DESCRIPTION: Journalism, Broadcasting, Digital Media, PR & Advertising | CARD: border-top:5px solid var(--navy) pad:30px bg:#fff radius:15px' }] },
+
+            'tuition': {
+                title: 'Tuition Fees', path: 'src/app/tuition/page.tsx', cat: 'support',
+                desc: 'Official financial transparency portal. Contains detailed tables for Egyptian and International students.',
+                blocks: [
+                    { label: 'Egyptian Students Fees', h: 250, spec: 'COMP: tuition/page.tsx | CLASS: tuition-pdf-table | MIN-WIDTH: 800px table-layout:fixed border-collapse | BORDER: 1px solid #333 bg:#fff font:inherit 15px | TH: bg:#4A86E8 c:white pad:14px 10px border:1px #333 fw:700 center | TD: border:1px #ddd pad:12px 10px c:#1a1a1a fw:500 center | FACULTY-LABEL: bg:#f8faff fw:800 1rem c:#4E4099 v-align:middle border-right:2px #333 | TOTAL-CELL: fw:800 c:#4E4099 bg:#fdfdfd | EVEN-ROW: bg:#fcfcfc | HOVER-ROW: bg:rgba(74,134,232,0.05) | DISCOUNT: c:#E53E3E bold | 1st-INST-HEADER: bg:#F0F4F8 c:#000 fw:900 | 2nd-INST-HEADER: bg:#FFF9E5 c:#000 fw:900 | 3rd-INST-HEADER: bg:#F7FAFC c:#000 fw:900 | COLUMNS: Faculty 12% Category 10% Annual 12% Discount 10% Total 11% Inst1 15% Inst2 15% Inst3 15% | WRAP: radius:8px shadow:0 4px 15px overflow-x:auto -webkit-overflow-scrolling:touch | SCROLL-THUMB: 6px #D4AF37 radius:10px', items: [{ type: 'dot', label: 'Installments', x: 50, y: 70 }] },
+                    { label: 'International Students Fees', h: 200, spec: 'COMP: tuition/page.tsx (International section) | LAYOUT: grid auto-fit minmax(280px, 1fr) gap:20px | HEADER: flex align-center gap:15px border-left:5px #D4AF37 pad-left:15px | HEADING: clamp(1.5rem,5vw,2rem)/bold #4E4099 | CARD: bg:#fff pad:30px radius:15px shadow:0 10px 30px border-top:5px #4E4099 | FACULTY-NAME: 1.3rem/800 #4E4099 mb:10px | PRICE: 2.2rem/bold black | UNIT: 1rem #666 | Medicine: 6,000 USD/Year' },
+                    { label: 'Contact Admissions', h: 100, items: [{ type: 'btn', label: 'WhatsApp', x: 30, y: 50, spec: 'WA: connect-tuition' }, { type: 'btn', label: 'Call 17523', x: 70, y: 50, spec: 'TEL: 17523' }] }
+                ]
+            },
+            'requirements': {
+                title: 'Entry Requirements', path: 'src/app/requirements/page.tsx', cat: 'support',
+                desc: 'General entry criteria and certificate verification processes for all faculties.',
+                blocks: [
+                    { label: 'Header', h: 180, spec: 'COMP: PageHeader.tsx | BG: /images/hero/hero-2.webp | TITLE: Faculty Entry Requirements | SUBTITLE: Academic Year 2026 – 2027' },
+                    { label: 'Certificates Grid', h: 300, spec: 'COMP: RequirementsHubPage (page.tsx) | GRID: 3x3 layout of faculty cards (Medicine, Dentistry, Pharmacy, PT, Engineering, CS, Business, Art, Mass Comm) | CARD-STYLE: border-radius:12px pad:24px bg:#fff shadow | CTA: Link to /requirements/[slug] | HOVER: translateY(-5px) scale(1.02) shadow', items: [{ type: 'dot', label: 'Medicine', x: 10, y: 30, spec: 'ROUTE: /requirements/medicine' }, { type: 'dot', label: 'Engineering', x: 30, y: 30, spec: 'ROUTE: /requirements/engineering' }, { type: 'dot', label: 'Pharmacy', x: 50, y: 30, spec: 'ROUTE: /requirements/pharmacy' }, { type: 'dot', label: 'Dentistry', x: 70, y: 30, spec: 'ROUTE: /requirements/dentistry' }, { type: 'dot', label: 'Others', x: 90, y: 30, spec: 'ROUTE: /requirements' }] },
+                    { label: 'Ready to Apply Band', h: 200, spec: 'UI: CTA Section | BG: var(--navy) | COLOR: white | BUTTON-1: apply.uec.edu.eg | BUTTON-2: WhatsApp Admissions | CONTACTS: Hotline 17523, email Enrol@uec.edu.eg, phone 01505123666', items: [{ type: 'btn', label: 'Proceed to Portal', x: 35, y: 60, spec: 'URL: apply.uec.edu.eg' }, { type: 'btn', label: 'WhatsApp', x: 65, y: 60, spec: 'URL: wa.me' }] }
+                ]
+            },
+            'careers': {
+                title: 'Careers Hub', path: 'src/app/careers/page.tsx', cat: 'support',
+                desc: 'Official career opportunities landing page featuring academic and administrative roles.',
+                blocks: [
+                    { label: 'Header', h: 180, spec: 'COMP: PageHeader.tsx | BG: /images/hero/hero-2.webp | TITLE: Careers at UEC | SUBTITLE: Join Our Team of Excellence' },
+                    { label: 'Intro & Vacancies Button', h: 120, spec: 'UI: Central text block with button | TEXT: UEC attracts exceptional talent | BUTTON: View Current Vacancies linking to /careers/vacancies', items: [{ type: 'btn', label: 'Current Vacancies', x: 50, y: 70, spec: 'ROUTE: /careers/vacancies | BG: var(--navy)' }] },
+                    { label: 'Careers Category Selection (Administrative vs Academic)', h: 300, spec: 'COMP: CareersHubPage (page.tsx) | GRID: 2-column layout (Admin vs Academic) | ADMIN-CARD: Admin & Support, highlights: full-time, competitive pay, dev options, link to /careers/administrative | ACADEMIC-CARD: Faculty & Research, highlights: lecturer/professor levels, research funding, link to /careers/academic | CARD-STYLE: border-radius:20px pad:25px', items: [{ type: 'btn', label: 'Admin Jobs', x: 25, y: 80, spec: 'ROUTE: /careers/administrative' }, { type: 'btn', label: 'Academic Jobs', x: 75, y: 80, spec: 'ROUTE: /careers/academic' }] },
+                    { label: 'Recruitment Standards & Data Privacy Notice', h: 80, spec: 'UI: Warning notice box | ICON: ⚠️ | TEXT: Strict confidentiality, only short-listed candidates' },
+                    { label: 'HR Direct Contact Bar', h: 120, spec: 'UI: Contact section | MAIL: hr@uec.edu.eg | TEL: 17523 | STYLE: Font 1.1rem' }
+                ]
+            },
+            'research': { title: 'Research Hub', path: 'src/app/departments/research-main/page.tsx', cat: 'core', desc: 'Scientific publications and lab facilities.', blocks: [{ label: 'Header', h: 180, spec: 'COMP: PageHeader.tsx | BG: /images/hero/hero-2.webp | TITLE: Research & Innovation' }, { label: 'Research Grid (Prototype Center / Startups)', h: 300, spec: 'LAYOUT: responsive-grid-3 min:250px gap:25px | DESCRIPTION: Prototyping Research Center (PRC) - biotechnology, synthetic biology, AI, smart electronics, digital manufacturing | CARD-STYLE: bg:#fff radius:12px shadow pad:30px' }] },
+            'news': { title: 'All News', path: 'src/app/news/page.tsx', cat: 'core', desc: 'Categorized site-wide news portal.', blocks: [{ label: 'Header', h: 120, spec: 'COMP: PageHeader.tsx | TITLE: Latest News & Events | BG: /images/hero/hero-2.webp' }, { label: 'News Grid', h: 400, spec: 'COMP: NewsGrid.tsx | GRID: 3-col (1.5fr 1fr 1fr) gap:24px | CARD: bg:#fff radius:4px img:16/9 title:Playfair 17px/700' }] },
+            'admin-dashboard': {
+                title: 'Technical Admin', path: 'src/app/dashboard/page.tsx', cat: 'admin',
+                desc: 'Internal control panel welcoming staff based on user roles (HR Recruiter, Marketing CRM, general staff).',
+                blocks: [
+                    { label: 'Welcome Panel', h: 120, spec: 'COMP: DashboardPage (page.tsx) | LOGIC: Greeting role-based (HR Recruitment Command Center, Marketing & CRM Intelligence, UEC Staff Portal) | TITLE: Welcome back, {user.name} | SUB: role description | @≤768px: pad:20px center' },
+                    { label: 'Stats Cards', h: 200, spec: 'UI: 3-column metrics grid | CARD-1: Active Applications (HR) / News Posts (Staff) / Leads (Marketing) | CARD-2: System Status (Always ONLINE, color:#2ecc71) | CARD-3: Active Events | CARD-STYLE: bg:#fff pad:24px border:1px solid #eef2f6 radius:20px shadow:0 10px 30px rgba(0,0,0,0.03)' }
+                ]
+            },
+            'admin-crm': { title: 'CRM Dashboard', path: 'src/app/dashboard/crm/page.tsx', cat: 'admin', desc: 'Student lead management system. Critical for admissions.', blocks: [{ label: 'Top Bar', h: 60, spec: 'COMP: ActionHeader.tsx', items: [{ type: 'btn', label: 'Export', x: 80, y: 30, spec: 'JS: handleExportCSV()' }] }, { label: 'Stats', h: 200, spec: 'UI: metrics-system' }, { label: 'Leads', h: 400, spec: 'FILE: LeadsTable.tsx', items: [{ type: 'dot', label: 'Detail', x: 90, y: 20, spec: 'MODAL: show-lead-profile' }] }] },
+            'admin-hr': { title: 'HR Management', path: 'src/app/dashboard/hr/page.tsx', cat: 'admin', desc: 'Internal recruitment and staff management system.', blocks: [{ label: 'Top Bar', h: 60, spec: 'UI: flex-toolbar', items: [{ type: 'btn', label: 'Add Vacancy', x: 80, y: 30, spec: 'MODAL: new-vacancy-form' }] }, { label: 'Vacancies', h: 400, spec: 'FILE: VacancyList.tsx' }] },
+            'admin-analytics': { title: 'Analytics', path: 'src/app/dashboard/analytics/page.tsx', cat: 'admin', desc: 'Site traffic and conversion metrics.', blocks: [{ label: 'Charts', h: 300, spec: 'LIB: Chart.js' }, { label: 'Heatmap', h: 300, spec: 'UI: campus-heatmap' }] }
+        };
+
+        let currentView = 'wire';
+        let currentPage = 'home';
+        let TASKS = [];
+
+        // --- Firebase Config ---
+        const firebaseConfig = {
+            apiKey: "AIzaSyD30dRlyMNxU_6DaNYIcrCTAWVQ8IfgPrY",
+            authDomain: "uec-atlas.firebaseapp.com",
+            projectId: "uec-atlas",
+            storageBucket: "uec-atlas.firebasestorage.app",
+            messagingSenderId: "837044887532",
+            appId: "1:837044887532:web:c799c2c3e41827ff216ac9",
+            measurementId: "G-B7M37707P5"
+        };
+        let db = null;
+        let storage = null;
+
+        // Initialization
+        window.onload = async () => {
+            renderNav();
+            switchPage('home');
+            renderDictionary();
+            populateTaskTargets();
+
+            document.getElementById('db-status').innerText = 'FIREBASE: CONNECTING...';
+            try {
+                firebase.initializeApp(firebaseConfig);
+                db = firebase.firestore();
+                try {
+                    storage = firebase.storage();
+                } catch (se) {
+                    console.warn("Firebase Storage failed to initialize:", se);
+                }
+
+                // Real-time listener
+                db.collection("tasks").orderBy("time", "desc").onSnapshot((querySnapshot) => {
+                    TASKS = [];
+                    querySnapshot.forEach((doc) => {
+                        TASKS.push({ id: doc.id, ...doc.data() });
+                    });
+                    renderTasks(true);
+                    document.getElementById('db-status').innerText = 'FIREBASE: ONLINE';
+                    document.getElementById('db-status').className = 'db-badge db-online';
+                }, (error) => {
+                    console.error("Firebase Listener Error:", error);
+                    const badge = document.getElementById('db-status');
+                    badge.className = 'db-badge db-offline';
+                    if (error.code === 'failed-precondition') {
+                        badge.innerText = 'FIREBASE: INDEX REQUIRED ⚠';
+                        badge.title = 'A composite index is needed on the tasks collection. Check browser console (F12) for a direct creation link.';
+                        badge.style.cursor = 'pointer';
+                        badge.onclick = () => { console.log('%c[FIREBASE FIX] This query requires a composite index on "time" (descending).\nLook for the index-creation URL in the error above ↑ or go to:\nhttps://console.firebase.google.com/project/uec-atlas/firestore/indexes', 'color:#D4AF37;font-size:13px;font-weight:bold;background:#1a1a2e;padding:10px;border-radius:6px'); };
+                    } else if (error.code === 'permission-denied') {
+                        badge.innerText = 'FIREBASE: RULES EXPIRED ✕';
+                        badge.title = 'Firestore security rules may have expired. Update in Firebase Console → Firestore → Rules tab.';
+                        badge.style.cursor = 'help';
+                    } else {
+                        badge.innerText = 'FIREBASE: ' + (error.code || 'ERROR').toUpperCase();
+                        badge.title = error.message || 'Unknown connection error';
+                    }
+                    // Fallback: load from localStorage when Firebase fails
+                    if (TASKS.length === 0) {
+                        TASKS = JSON.parse(localStorage.getItem('uec_tasks')) || [];
+                        renderTasks();
+                    }
+                });
+            } catch (e) {
+                console.error("Init Error:", e);
+                document.getElementById('db-status').innerText = 'FIREBASE: CONFIG ERROR';
+                // Fallback to localStorage
+                TASKS = JSON.parse(localStorage.getItem('uec_tasks')) || [];
+                renderTasks();
+            }
+        };
+
+        function openConfigModal() {
+            const configStr = prompt("Paste your Firebase Config Object (JSON):", localStorage.getItem('uec_firebase_config') || '{"apiKey": "...", ...}');
+            if (configStr) {
+                try {
+                    const parsed = JSON.parse(configStr);
+                    localStorage.setItem('uec_firebase_config', JSON.stringify(parsed));
+                    location.reload();
+                } catch (e) {
+                    alert("Invalid JSON format. Please paste the configuration object correctly.");
+                }
+            }
+        }
+
+        // Navigation Renderer
+        function renderNav() {
+            Object.keys(PAGES).forEach(id => {
+                const p = PAGES[id];
+                const item = document.createElement('div');
+                item.className = 'nav-item';
+                item.innerText = p.title;
+                item.onclick = () => switchPage(id);
+                item.id = 'nav-' + id;
+                document.getElementById('nav-' + p.cat).appendChild(item);
+            });
+        }
+
+        // View Switcher
+        function setView(v) {
+            currentView = v;
+            document.getElementById('wireframe-view').style.display = v === 'wire' ? 'block' : 'none';
+            document.getElementById('dictionary-view').style.display = v === 'dict' ? 'block' : 'none';
+            document.getElementById('task-log-view').style.display = v === 'log' ? 'block' : 'none';
+            document.getElementById('task-history-view').style.display = v === 'hist' ? 'block' : 'none';
+
+            document.getElementById('btn-wire').classList.toggle('active', v === 'wire');
+            document.getElementById('btn-dict').classList.toggle('active', v === 'dict');
+            document.getElementById('btn-log').classList.toggle('active', v === 'log');
+            document.getElementById('btn-hist').classList.toggle('active', v === 'hist');
+        }
+
+        // Page Switcher
+        function switchPage(id) {
+            currentPage = id;
+            const p = PAGES[id];
+            document.getElementById('page-title').innerText = p.title;
+            document.getElementById('page-path').innerText = p.path;
+
+            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+            document.getElementById('nav-' + id).classList.add('active');
+
+            const stage = document.getElementById('stage');
+            stage.innerHTML = '';
+            (p.blocks || []).forEach(b => {
+                const container = document.createElement('div');
+                container.className = 'wf-block-container';
+
+                const block = document.createElement('div');
+                block.className = 'wf-block';
+                block.style.height = b.h + 'px';
+                block.innerText = '[[ ' + b.label + ' ]]';
+                block.id = 'wf-block-' + b.label.replace(/\s+/g, '-').toLowerCase();
+
+                if (b.spec) {
+                    block.onmouseenter = (e) => showTooltip(e, b.label, b.spec);
+                    block.onmouseleave = hideTooltip;
+                }
+
+                container.appendChild(block);
+
+                // v2.2: Render Nested Buttons/Items
+                if (b.items) {
+                    b.items.forEach(item => {
+                        const itemEl = document.createElement('div');
+                        itemEl.className = item.type === 'dot' ? 'wf-item-dot' : 'wf-item';
+                        itemEl.style.left = item.x + '%';
+                        itemEl.style.top = item.y + '%';
+                        if (item.type !== 'dot') itemEl.innerText = item.label;
+
+                        itemEl.onmouseenter = (e) => {
+                            showTooltip(e, item.label || 'Action Item', item.spec);
+                            itemEl.style.borderColor = '#F59E0B';
+                        };
+                        itemEl.onmouseleave = () => {
+                            hideTooltip();
+                            itemEl.style.borderColor = 'var(--gold)';
+                        };
+
+                        container.appendChild(itemEl);
+                    });
+                }
+
+                stage.appendChild(container);
+            });
+            setView('wire');
+        }
+
+        // Dictionary Renderer
+        function renderDictionary() {
+            const grid = document.getElementById('dict-grid');
+            grid.innerHTML = '';
+
+            // ── Render Design System Brand Identity Cards ──
+            if (typeof DESIGN_SYSTEM !== 'undefined') {
+                const dsColorCard = document.createElement('div');
+                dsColorCard.className = 'dict-card';
+                dsColorCard.style.borderLeft = '4px solid var(--gold)';
+                dsColorCard.style.background = 'linear-gradient(135deg, #fefefe, #faf8f2)';
+                let ch = '<span class="dict-title" style="color:#D4AF37">🎨 Color Palette <span class="dict-tag" style="background:#D4AF37;color:#0A1F3C">DESIGN SYSTEM</span></span>';
+                DESIGN_SYSTEM.colors.forEach(c => { ch += '<div class="spec-row"><span class="spec-key">' + c.token + '</span><span class="spec-val"><span style="display:inline-block;width:14px;height:14px;background:' + c.hex + ';border-radius:3px;vertical-align:middle;margin-right:6px;border:1px solid #ddd"></span>' + c.hex + ' — ' + c.usage + '</span></div>'; });
+                dsColorCard.innerHTML = ch;
+                grid.appendChild(dsColorCard);
+
+                const dsFontCard = document.createElement('div');
+                dsFontCard.className = 'dict-card';
+                dsFontCard.style.borderLeft = '4px solid var(--gold)';
+                dsFontCard.style.background = 'linear-gradient(135deg, #fefefe, #faf8f2)';
+                let fh = '<span class="dict-title" style="color:#D4AF37">🔤 Typography Stack <span class="dict-tag" style="background:#D4AF37;color:#0A1F3C">DESIGN SYSTEM</span></span>';
+                DESIGN_SYSTEM.fonts.forEach(f => { fh += '<div class="spec-row"><span class="spec-key">' + f.name + ' (' + f.var + ')</span><span class="spec-val">Weights: ' + f.weights + ' — ' + f.usage + '</span></div>'; });
+                fh += '<div class="spec-row"><span class="spec-key">Body Default</span><span class="spec-val">' + DESIGN_SYSTEM.body + '</span></div>';
+                dsFontCard.innerHTML = fh;
+                grid.appendChild(dsFontCard);
+            }
+
+            Object.keys(PAGES).forEach(pid => {
+                const p = PAGES[pid];
+
+                // Render Page Overview Card
+                if (p.desc) {
+                    const pageCard = document.createElement('div');
+                    pageCard.className = 'dict-card';
+                    pageCard.style.borderLeft = '4px solid var(--navy)';
+                    pageCard.innerHTML = `
+                    <span class="dict-title" style="color:var(--navy)">${p.title} (Page Overview)</span>
+                    <div style="font-size:0.85rem; color:#475569; margin-bottom:15px; font-style:italic;">${p.desc}</div>
+                    <div class="spec-row"><span class="spec-key">PATH</span><span class="spec-val">${p.path}</span></div>
+                    <div class="jump-btn" onclick="switchPage('${pid}')">GO TO WIREFRAME →</div>
+                `;
+                    grid.appendChild(pageCard);
+                }
+
+                (p.blocks || []).forEach(b => {
+                    if (b.spec) renderDictCard(grid, b.label, p.title, b.spec, pid);
+                    if (b.items) {
+                        b.items.forEach(item => {
+                            const itemTitle = (item.label || 'Action Item') + ' (UI Element)';
+                            renderDictCard(grid, itemTitle, p.title, item.spec, pid, b.label);
+                        });
+                    }
+                });
+            });
+        }
+
+        function renderDictCard(grid, title, page, spec, pid, parentLabel = null) {
+            const card = document.createElement('div');
+            card.className = 'dict-card';
+
+            let specsHtml = (spec || 'N/A').split('|').map(s => {
+                const parts = s.split(':');
+                return `<div class="spec-row"><span class="spec-key">${parts[0].trim()}</span><span class="spec-val">${parts[1]?.trim() || ''}</span></div>`;
+            }).join('');
+
+            card.innerHTML = `
+            <span class="dict-title">${title} <span class="dict-tag">${page}</span> ${parentLabel ? `<br><small style="color:#94A3B8">In: ${parentLabel}</small>` : ''}</span>
+            <div class="specs">${specsHtml}</div>
+            <div class="jump-btn" onclick="jumpToWireframe('${pid}', '${parentLabel || title}')">SEE VISUAL WIREFRAME →</div>
+        `;
+            grid.appendChild(card);
+        }
+
+        // Search Engine
+        const searchInput = document.getElementById('globalSearch');
+        const DICTIONARY = {
+            'Navbar.tsx': 'Core navigation component with glassmorphism effects and multi-level dropdowns for Faculties/Admissions.',
+            'Hero.tsx': 'High-impact landing component using Next.js Image optimization and dynamic CTA buttons.',
+            'SchoolsGrid.tsx': 'Interactive 3x3 or 4x2 grid of faculty cards with hover-animations and direct routing.',
+            'LeadCapture.tsx': 'Pop-up modal system triggered by "Apply Now" buttons to qualify leads before enrollment.',
+            'VirtualTour.tsx': 'Integration layer for Matterport or 3D 360-degree campus walkthroughs.',
+            'FeeTable.tsx': 'Precision financial component handling multi-currency (EGP/USD) and installment math.',
+            'DeptHeader.tsx': 'Standardized department landing header with breadcrumbs and primary branding.',
+            'CoursesGrid.tsx': 'Dynamic listing of academic programs with prerequisites and degree requirements metadata.',
+            'ScholarshipCards.tsx': 'Grid of financial aid opportunities with automated inquiry triggers.',
+            'ActionHeader.tsx': 'Administrative toolbar providing export tools and permission-based filters.',
+            'LeadsTable.tsx': 'Heavy-duty data grid for admissions officers to track and manage student applications.',
+            'StatsGrid.tsx': 'Metric visualization layer for high-level technical auditing and site performance monitoring.'
+        };
+        searchInput.addEventListener('input', () => {
+            const term = searchInput.value.toLowerCase();
+            setView('dict');
+            document.querySelectorAll('.dict-card').forEach(card => {
+                card.style.display = card.innerText.toLowerCase().includes(term) ? 'block' : 'none';
+            });
+        });
+
+        // --- Grouped Log History & PDF/Word Report Exports ---
+        function toggleExportDropdown(event) {
+            if (event) event.stopPropagation();
+            const dropdown = document.getElementById('exportDropdown');
+            if (dropdown) {
+                dropdown.style.display = dropdown.style.display === 'block' ? 'none' : 'block';
+            }
+        }
+
+        window.addEventListener('click', () => {
+            const dropdown = document.getElementById('exportDropdown');
+            if (dropdown) dropdown.style.display = 'none';
+        });
+
+        function getTaskDate(task) {
+            if (!task.time) return 'Unknown Date';
+            try {
+                const d = new Date(task.time);
+                if (!isNaN(d.getTime())) {
+                    return d.toISOString().split('T')[0];
+                }
+            } catch (e) {}
+            
+            const parts = task.time.match(/(\d{1,4})[\/\-](\d{1,2})[\/\-](\d{1,4})/);
+            if (parts) {
+                let y = parts[3];
+                let m = parts[1];
+                let d = parts[2];
+                if (parts[1].length === 4) {
+                    y = parts[1];
+                    m = parts[2];
+                    d = parts[3];
+                } else if (parseInt(parts[1]) > 12) {
+                    d = parts[1];
+                    m = parts[2];
+                }
+                return `${y}-${m.toString().padStart(2, '0')}-${d.toString().padStart(2, '0')}`;
+            }
+            return 'Unknown Date';
+        }
+
+        function clearHistoryDateFilter() {
+            const dateInput = document.getElementById('history-filter-date');
+            if (dateInput) dateInput.value = '';
+            renderHistoryGrouped();
+        }
+
+        function renderHistoryGrouped() {
+            const container = document.getElementById('history-grouped-container');
+            if (!container) return;
+            container.innerHTML = '';
+
+            const filterDate = document.getElementById('history-filter-date') ? document.getElementById('history-filter-date').value : '';
+
+            const groups = {};
+            TASKS.forEach((task, idx) => {
+                const dateKey = getTaskDate(task);
+                if (filterDate && dateKey !== filterDate) return;
+
+                if (!groups[dateKey]) {
+                    groups[dateKey] = [];
+                }
+                groups[dateKey].push({ task, index: idx });
+            });
+
+            const sortedDates = Object.keys(groups).sort((a, b) => b.localeCompare(a));
+
+            if (sortedDates.length === 0) {
+                container.innerHTML = `<div style="padding:40px; text-align:center; background:#f8fafc; color:#64748B; border-radius:8px; border:1px dashed var(--border);">No history logs found${filterDate ? ' for the selected day' : ''}.</div>`;
+                return;
+            }
+
+            sortedDates.forEach(date => {
+                const items = groups[date];
+                const doneCount = items.filter(item => item.task.status === 'done').length;
+                const totalCount = items.length;
+
+                let niceDate = date;
+                try {
+                    const parsedDate = new Date(date + 'T00:00:00');
+                    if (!isNaN(parsedDate.getTime())) {
+                        niceDate = parsedDate.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+                    }
+                } catch(e) {}
+
+                const dateBlock = document.createElement('div');
+                dateBlock.className = 'history-date-block';
+                dateBlock.style = "margin-bottom: 30px; background: white; border: 1px solid var(--border); border-radius: 12px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.02);";
+
+                const header = document.createElement('div');
+                header.style = "display:flex; justify-content:space-between; align-items:center; background:var(--light-bg); padding:16px 20px; border-bottom:1px solid var(--border); flex-wrap:wrap; gap:10px;";
+                header.innerHTML = `
+                    <div style="display:flex; align-items:center; gap:10px;">
+                        <h3 style="margin:0; font-size:1.1rem; color:var(--navy); font-weight:800;">📅 ${niceDate}</h3>
+                        <span class="status-badge" style="background:#E2E8F0; color:#475569; font-weight:700;">${totalCount} Tasks (${doneCount} Done)</span>
+                    </div>
+                    <div style="display:flex; gap:8px;">
+                        <button onclick="exportSingleDayReport('${date}', 'pdf')" style="padding:6px 12px; font-size:0.75rem; background:var(--navy); color:white; border:none; border-radius:6px; font-weight:700; cursor:pointer; display:flex; align-items:center; gap:4px;">📄 PDF Report</button>
+                        <button onclick="exportSingleDayReport('${date}', 'word')" style="padding:6px 12px; font-size:0.75rem; background:var(--gold); color:var(--navy); border:none; border-radius:6px; font-weight:700; cursor:pointer; display:flex; align-items:center; gap:4px;">📝 Word Report</button>
+                    </div>
+                `;
+
+                const tableContainer = document.createElement('div');
+                tableContainer.className = 'table-responsive';
+                
+                let rowsHTML = '';
+                items.forEach(({ task, index }) => {
+                    const timeOnly = task.time.includes(',') ? task.time.split(',')[1].trim() : task.time;
+                    const attachmentsList = task.attachments || (task.img ? [{ id: 'legacy_img', name: 'attached_image.png', type: 'image/png', size: 0, data: task.img, storageType: 'inline' }] : []);
+                    const attachHTML = renderAttachmentsHTML(attachmentsList, index);
+
+                    rowsHTML += `
+                        <tr>
+                            <td style="padding:12px; border-bottom:1px solid #F1F5F9;"><span class="status-badge status-${task.status}">${task.status}</span></td>
+                            <td style="padding:12px; border-bottom:1px solid #F1F5F9;"><div class="timestamp">${timeOnly}</div></td>
+                            <td style="padding:12px; border-bottom:1px solid #F1F5F9; font-weight:700; color:var(--navy);">${task.demander || '-'}</td>
+                            <td style="padding:12px; border-bottom:1px solid #F1F5F9;"><span class="dict-tag" style="background:#EEF5FC; color:var(--navy); border:1px solid var(--border); font-size:0.65rem; font-weight:700; margin-left:0;">${task.label || '-'}</span></td>
+                            <td style="padding:12px; border-bottom:1px solid #F1F5F9;"><small>${task.targetTitle || 'Global'}</small></td>
+                            <td style="padding:12px; border-bottom:1px solid #F1F5F9;">
+                                <div style="font-weight:700; color:#1E293B;">${task.desc}</div>
+                                <div style="font-size:0.75rem; color:#64748B; margin-top:4px; font-style:italic;">${task.comment || ''}</div>
+                                ${attachHTML}
+                            </td>
+                        </tr>
+                    `;
+                });
+
+                tableContainer.innerHTML = `
+                    <table class="history-table" style="width:100%; border-collapse:collapse; text-align:left; font-size:0.8rem;">
+                        <thead>
+                            <tr style="background:#F8FAFC; border-bottom:2px solid var(--border);">
+                                <th style="padding:12px; font-weight:700; color:#475569; width:80px;">Status</th>
+                                <th style="padding:12px; font-weight:700; color:#475569; width:100px;">Time</th>
+                                <th style="padding:12px; font-weight:700; color:#475569; width:110px;">Demander</th>
+                                <th style="padding:12px; font-weight:700; color:#475569; width:90px;">Category</th>
+                                <th style="padding:12px; font-weight:700; color:#475569; width:160px;">Target</th>
+                                <th style="padding:12px; font-weight:700; color:#475569;">Description & Response</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${rowsHTML}
+                        </tbody>
+                    </table>
+                `;
+
+                dateBlock.appendChild(header);
+                dateBlock.appendChild(tableContainer);
+                container.appendChild(dateBlock);
+            });
+        }
+
+        function exportSingleDayReport(date, format) {
+            const filtered = TASKS.filter(task => getTaskDate(task) === date);
+            let niceDate = date;
+            try {
+                const parsedDate = new Date(date + 'T00:00:00');
+                if (!isNaN(parsedDate.getTime())) {
+                    niceDate = parsedDate.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+                }
+            } catch(e) {}
+
+            if (format === 'pdf') {
+                exportReportPDF('daily', filtered, niceDate);
+            } else {
+                exportReportWord('daily', filtered, niceDate);
+            }
+        }
+
+        function exportReport(type, format) {
+            let filteredTasks = [];
+            let dateLabel = '';
+
+            if (type === 'daily') {
+                const filterDate = document.getElementById('history-filter-date') ? document.getElementById('history-filter-date').value : '';
+                if (!filterDate) {
+                    if (TASKS.length === 0) {
+                        alert("No tasks available to generate a report.");
+                        return;
+                    }
+                    const recentDate = getTaskDate(TASKS[0]);
+                    const parsedDate = new Date(recentDate + 'T00:00:00');
+                    dateLabel = isNaN(parsedDate.getTime()) ? recentDate : parsedDate.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+                    filteredTasks = TASKS.filter(task => getTaskDate(task) === recentDate);
+                    alert(`No day selected in the filter. Generating daily report for the most recent day: ${dateLabel}`);
+                } else {
+                    const parsedDate = new Date(filterDate + 'T00:00:00');
+                    dateLabel = isNaN(parsedDate.getTime()) ? filterDate : parsedDate.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+                    filteredTasks = TASKS.filter(task => getTaskDate(task) === filterDate);
+                }
+            } else if (type === 'weekly') {
+                const oneWeekAgo = new Date();
+                oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+                
+                filteredTasks = TASKS.filter(task => {
+                    const taskDate = new Date(getTaskDate(task));
+                    return !isNaN(taskDate.getTime()) && taskDate >= oneWeekAgo;
+                });
+                
+                if (filteredTasks.length === 0) {
+                    filteredTasks = TASKS;
+                    dateLabel = "All Tasks Summary (Fallback)";
+                } else {
+                    dateLabel = `Last 7 Days (Since ${oneWeekAgo.toLocaleDateString()})`;
+                }
+            }
+
+            if (filteredTasks.length === 0) {
+                alert("No tasks found for the selected report scope.");
+                return;
+            }
+
+            if (format === 'pdf') {
+                exportReportPDF(type, filteredTasks, dateLabel);
+            } else {
+                exportReportWord(type, filteredTasks, dateLabel);
+            }
+        }
+
+        function exportReportPDF(reportType, filteredTasks, dateLabel) {
+            try {
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF('p', 'mm', 'a4');
+                
+                doc.setFillColor(78, 64, 153);
+                doc.rect(0, 0, 210, 35, 'F');
+                
+                doc.setTextColor(255, 255, 255);
+                doc.setFont("helvetica", "bold");
+                doc.setFontSize(20);
+                doc.text("UNIVERSITY OF EAST CAPITAL", 15, 15);
+                
+                doc.setFont("helvetica", "normal");
+                doc.setFontSize(10);
+                doc.setTextColor(212, 175, 55);
+                doc.text("UEC TECHNICAL ATLAS & REGISTRY - STATUS BLUEPRINT", 15, 23);
+                
+                doc.setTextColor(42, 34, 96);
+                doc.setFont("helvetica", "bold");
+                doc.setFontSize(13);
+                doc.text(`${reportType.toUpperCase()} STATUS REPORT`, 15, 48);
+                
+                doc.setFont("helvetica", "normal");
+                doc.setFontSize(9);
+                doc.setTextColor(110, 101, 168);
+                doc.text(`Report Generated: ${new Date().toLocaleString()}`, 15, 54);
+                doc.text(`Filtered Scope: ${dateLabel}`, 15, 59);
+                
+                const total = filteredTasks.length;
+                const done = filteredTasks.filter(t => t.status === 'done').length;
+                const pending = filteredTasks.filter(t => t.status === 'pending').length;
+                const rate = total > 0 ? Math.round((done / total) * 100) : 0;
+                
+                doc.setFont("helvetica", "bold");
+                doc.setTextColor(42, 34, 96);
+                doc.text(`Total Tasks: ${total}  |  Completed: ${done}  |  Pending: ${pending}  |  Completion Rate: ${rate}%`, 15, 68);
+                
+                doc.setDrawColor(212, 175, 55);
+                doc.setLineWidth(0.5);
+                doc.line(15, 71, 195, 71);
+                
+                const tableData = filteredTasks.map(t => {
+                    const timeText = t.time.includes(',') ? t.time.split(',')[1].trim() : t.time;
+                    let attachmentsText = '';
+                    const atts = t.attachments || [];
+                    if (atts.length > 0) {
+                        attachmentsText = '\n[Files: ' + atts.map(a => a.name).join(', ') + ']';
+                    }
+                    
+                    return [
+                        t.status.toUpperCase(),
+                        timeText,
+                        t.label || 'None',
+                        t.demander || 'Unidentified',
+                        t.targetTitle || 'Global',
+                        (t.desc || '') + (t.comment ? `\nFeedback: ${t.comment}` : '') + attachmentsText
+                    ];
+                });
+                
+                doc.autoTable({
+                    startY: 75,
+                    head: [["STATUS", "TIME", "CATEGORY", "DEMANDER", "TARGET PAGE & BLOCK", "TASK DETAILS & RESPONSES"]],
+                    body: tableData,
+                    headStyles: {
+                        fillColor: [78, 64, 153],
+                        textColor: [255, 255, 255],
+                        fontSize: 8,
+                        fontStyle: 'bold'
+                    },
+                    alternateRowStyles: {
+                        fillColor: [248, 250, 252]
+                    },
+                    bodyStyles: {
+                        fontSize: 7.5,
+                        textColor: [42, 34, 96]
+                    },
+                    columnStyles: {
+                        0: { cellWidth: 18, fontStyle: 'bold' },
+                        1: { cellWidth: 20 },
+                        2: { cellWidth: 22 },
+                        3: { cellWidth: 25 },
+                        4: { cellWidth: 35 },
+                        5: { cellWidth: 60 }
+                    },
+                    margin: { left: 15, right: 15 }
+                });
+                
+                doc.save(`uec_${reportType}_report_${dateLabel.replace(/[\s,\/:]+/g, '_')}.pdf`);
+            } catch (pdfErr) {
+                console.error("PDF generation failed:", pdfErr);
+                alert("PDF generation failed. Please check console (F12) for details.");
+            }
+        }
+
+        function exportReportWord(reportType, filteredTasks, dateLabel) {
+            try {
+                const total = filteredTasks.length;
+                const done = filteredTasks.filter(t => t.status === 'done').length;
+                const pending = filteredTasks.filter(t => t.status === 'pending').length;
+                const rate = total > 0 ? Math.round((done / total) * 100) : 0;
+                
+                let tableRowsHTML = '';
+                filteredTasks.forEach(t => {
+                    const attachmentsList = t.attachments || [];
+                    let fileNames = '';
+                    if (attachmentsList.length > 0) {
+                        fileNames = `<br><b style="color:#6E65A8">Attached Files:</b> ${attachmentsList.map(a => `${a.name} (${a.storageType})`).join(', ')}`;
+                    } else if (t.img) {
+                        fileNames = `<br><b style="color:#6E65A8">Attached Files:</b> attached_image.png (inline)`;
+                    }
+
+                    tableRowsHTML += `
+                        <tr style="border-bottom: 1px solid #E2E8F0;">
+                            <td style="padding: 10px; font-weight: bold; color: ${t.status === 'done' ? '#10B981' : '#F59E0B'}">${t.status.toUpperCase()}</td>
+                            <td style="padding: 10px;">${t.time}</td>
+                            <td style="padding: 10px;">${t.label || 'None'}</td>
+                            <td style="padding: 10px; font-weight: bold;">${t.demander || 'Unidentified'}</td>
+                            <td style="padding: 10px;">${t.targetTitle || 'Global'}</td>
+                            <td style="padding: 10px; font-weight: bold;">
+                                ${t.desc || ''}
+                                ${fileNames}
+                            </td>
+                            <td style="padding: 10px; color: #64748B; font-style: italic;">${t.comment || ''}</td>
+                        </tr>
+                    `;
+                });
+
+                const docHTML = `
+                    <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
+                    <head>
+                        <title>${reportType.toUpperCase()} Report</title>
+                        <!--[if gte mso 9]>
+                        <xml>
+                            <w:WordDocument>
+                                <w:View>Print</w:View>
+                                <w:Zoom>100</w:Zoom>
+                            </w:WordDocument>
+                        </xml>
+                        <![endif]-->
+                        <style>
+                            body { font-family: 'Arial', sans-serif; color: #2A2260; margin: 40px; }
+                            .header-banner { background-color: #4E4099; padding: 25px; color: white; border-radius: 4px; margin-bottom: 30px; }
+                            .title { font-size: 22pt; font-weight: bold; margin: 0; }
+                            .subtitle { font-size: 11pt; color: #D4AF37; margin: 5px 0 0 0; font-weight: bold; }
+                            .report-header { font-size: 16pt; font-weight: bold; color: #4E4099; margin-bottom: 10px; }
+                            .meta-table { width: 100%; border-collapse: collapse; margin-bottom: 30px; }
+                            .meta-table td { padding: 6px; font-size: 10pt; color: #6E65A8; }
+                            .summary-bar { background-color: #F8FAFC; padding: 15px; border-left: 5px solid #D4AF37; font-size: 11pt; font-weight: bold; margin-bottom: 30px; }
+                            .task-table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 10pt; }
+                            .task-table th { background-color: #4E4099; color: white; padding: 12px 10px; text-align: left; font-weight: bold; }
+                            .task-table td { padding: 10px; border-bottom: 1px solid #E2E8F0; }
+                        </style>
+                    </head>
+                    <body>
+                        <div class="header-banner">
+                            <div class="title">UNIVERSITY OF EAST CAPITAL</div>
+                            <div class="subtitle">UEC TECHNICAL ATLAS & REGISTRY - BLUEPRINT STATUS REPORT</div>
+                        </div>
+                        
+                        <div class="report-header">${reportType.toUpperCase()} EXECUTION REPORT</div>
+                        
+                        <table class="meta-table">
+                            <tr>
+                                <td style="width: 150px; font-weight: bold;">Report Date:</td>
+                                <td>${new Date().toLocaleDateString()}</td>
+                            </tr>
+                            <tr>
+                                <td style="font-weight: bold;">Target Scope:</td>
+                                <td>${dateLabel}</td>
+                            </tr>
+                        </table>
+                        
+                        <div class="summary-bar">
+                            Total Tasks: ${total} &nbsp;&nbsp;|&nbsp;&nbsp; 
+                            Completed: ${done} &nbsp;&nbsp;|&nbsp;&nbsp; 
+                            Pending: ${pending} &nbsp;&nbsp;|&nbsp;&nbsp; 
+                            Completion Rate: ${rate}%
+                        </div>
+                        
+                        <table class="task-table" border="1" cellspacing="0" cellpadding="5" style="border: 1px solid #CBD5E1; border-collapse:collapse; width:100%;">
+                            <thead>
+                                <tr style="background-color: #4E4099; color: white;">
+                                    <th style="padding: 12px 10px; text-align: left;">STATUS</th>
+                                    <th style="padding: 12px 10px; text-align: left;">TIME</th>
+                                    <th style="padding: 12px 10px; text-align: left;">CATEGORY</th>
+                                    <th style="padding: 12px 10px; text-align: left;">DEMANDER</th>
+                                    <th style="padding: 12px 10px; text-align: left;">TARGET</th>
+                                    <th style="padding: 12px 10px; text-align: left;">DESCRIPTION & FILES</th>
+                                    <th style="padding: 12px 10px; text-align: left;">FEEDBACK/COMMENTS</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${tableRowsHTML}
+                            </tbody>
+                        </table>
+                        
+                        <div style="margin-top: 50px; font-size: 8pt; color: #94A3B8; text-align: center; border-top: 1px solid #E2E8F0; padding-top: 15px;">
+                            Generated automatically by UEC Website Technical Atlas Dashboard.
+                        </div>
+                    </body>
+                    </html>
+                `;
+
+                const blob = new Blob(['\ufeff' + docHTML], { type: 'application/msword' });
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = `uec_${reportType}_report_${dateLabel.replace(/[\s,\/:]+/g, '_')}.doc`;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                URL.revokeObjectURL(url);
+            } catch (wordErr) {
+                console.error("Word report generation failed:", wordErr);
+                alert("Word report generation failed.");
+            }
+        }
+
+        // v2.3 Task Management Logic
+        function renderTasks(fromDB = false) {
+            const list = document.getElementById('task-list');
+            list.innerHTML = '';
+
+            let pendingCount = 0;
+
+            TASKS.forEach((task, index) => {
+                // 1. Render in Active Log if not deleted
+                if (task.status !== 'deleted') {
+                    if (task.status === 'pending') pendingCount++;
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td><span class="status-badge status-${task.status}">${task.status}</span></td>
+                        <td><div class="timestamp">${task.time}</div></td>
+                        <td>
+                            <div style="font-weight:700">${task.desc}</div>
+                            <div style="font-size:0.75rem; color:#64748B; margin-top:5px;">${task.comment || ''}</div>
+                            <div style="font-size:0.7rem; color:var(--navy); margin-top:3px; font-weight:700;">By: ${task.demander || 'Unidentified'} | Label: ${task.label || 'None'}</div>
+                            ${renderAttachmentsHTML(task.attachments || (task.img ? [{ id: 'legacy_img', name: 'attached_image.png', type: 'image/png', size: 0, data: task.img, storageType: 'inline' }] : []), index)}
+                        </td>
+                        <td>
+                            ${task.target ? `<span class="jump-log" onclick="jumpToTaskTarget('${task.target}', '${task.targetLabel}')">${task.targetTitle}</span>` : 'Global'}
+                        </td>
+                        <td>
+                            <button onclick="openTaskDetail(${index})" style="padding:4px 8px; font-size:0.7rem; cursor:pointer; background:var(--navy); color:white; border:none; border-radius:4px;">VIEW / EDIT</button>
+                            <button onclick="deleteTask(${index}, '${task.id}')" style="padding:4px 8px; font-size:0.7rem; color:red; cursor:pointer; margin-left:5px; background:none; border:none;">DEL</button>
+                        </td>
+                    `;
+                    list.appendChild(tr);
+                }
+            });
+
+            // Update grouped log history view
+            renderHistoryGrouped();
+
+            if (!fromDB) localStorage.setItem('uec_tasks', JSON.stringify(TASKS));
+            document.getElementById('btn-log').innerText = `Technical Task Log (${pendingCount})`;
+        }
+
+        let editingTaskIndex = -1;
+        function openTaskDetail(index) {
+            editingTaskIndex = index;
+            const task = TASKS[index];
+            document.getElementById('modal-title').innerText = `Task #${TASKS.length - index}: ${task.desc.substring(0, 30)}...`;
+            document.getElementById('edit-desc').value = task.desc;
+            document.getElementById('edit-comment').value = task.comment || '';
+            document.getElementById('modal-status').innerHTML = `<span class="status-badge status-${task.status}">${task.status}</span>`;
+            document.getElementById('modal-time').innerText = `Created: ${task.time}`;
+            document.getElementById('modal-target').innerText = task.targetTitle || 'Global Reference';
+
+            const imgContainer = document.getElementById('modal-img-container');
+            if (imgContainer) imgContainer.style.display = 'none';
+
+            const attachmentsContainer = document.getElementById('modal-attachments-container');
+            if (attachmentsContainer) {
+                attachmentsContainer.innerHTML = '';
+                let attachments = task.attachments || [];
+                if (task.img && attachments.length === 0) {
+                    attachments = [{
+                        id: 'legacy_img',
+                        name: 'attached_image.png',
+                        type: 'image/png',
+                        size: 0,
+                        data: task.img,
+                        storageType: 'inline'
+                    }];
+                }
+
+                if (attachments.length === 0) {
+                    attachmentsContainer.innerHTML = '<div style="padding:15px; text-align:center; background:#f8fafc; color:#94A3B8; border-radius:8px; font-size:0.8rem;">No attachments</div>';
+                } else {
+                    attachments.forEach((file, idx) => {
+                        const isImg = file.type.startsWith('image/') || file.name.match(/\.(jpg|jpeg|png|gif|webp|svg)$/i);
+                        const sizeText = file.size ? `(${(file.size / 1024).toFixed(1)} KB)` : '';
+                        
+                        const item = document.createElement('div');
+                        item.style = "display:flex; flex-direction:column; gap:8px; background:#f8fafc; border:1px solid #E2E8F0; padding:12px; border-radius:8px; margin-bottom:8px;";
+                        
+                        let previewHTML = '';
+                        if (isImg && !file.data.startsWith('indexeddb:')) {
+                            previewHTML = `<div style="max-width:100%; overflow:hidden; border-radius:4px; margin-top:5px;"><img src="${file.data}" style="max-height:150px; max-width:100%; object-fit:contain; cursor:pointer;" onclick="openAttachment(${index}, ${idx}, event)"></div>`;
+                        }
+                        
+                        let icon = '📁';
+                        if (file.type.includes('pdf') || file.name.endsWith('.pdf')) icon = '📕';
+                        else if (file.name.match(/\.(doc|docx)$/i)) icon = '📘';
+                        else if (file.name.match(/\.(xls|xlsx|csv)$/i)) icon = '📗';
+                        else if (file.name.match(/\.(zip|rar|tar|gz)$/i)) icon = '📦';
+                        else if (file.name.match(/\.(txt|md)$/i)) icon = '📄';
+                        
+                        item.innerHTML = `
+                            <div style="display:flex; align-items:center; justify-content:space-between; width:100%;">
+                                <div style="display:flex; align-items:center; gap:8px; font-size:0.85rem; font-weight:700; color:var(--navy);">
+                                    <span>${icon}</span>
+                                    <span style="max-width:200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${file.name}">${file.name}</span>
+                                    <span style="font-size:0.75rem; color:#64748B; font-weight:normal;">${sizeText}</span>
+                                </div>
+                                <button onclick="openAttachment(${index}, ${idx}, event)" style="padding:4px 10px; font-size:0.75rem; background:var(--gold); border:none; border-radius:4px; font-weight:700; cursor:pointer; color:var(--navy);">Download / Open</button>
+                            </div>
+                            ${file.storageType === 'indexeddb' ? `<div style="font-size:0.75rem; color:#F59E0B; font-weight:normal;">⚠️ This file is saved locally in this browser. It won't sync to other devices.</div>` : ''}
+                            ${previewHTML}
+                        `;
+                        attachmentsContainer.appendChild(item);
+                    });
+                }
+            }
+
+            document.getElementById('task-detail-overlay').style.display = 'flex';
+        }
+
+        async function toggleTaskModal() {
+            if (editingTaskIndex === -1) return;
+            const newStatus = TASKS[editingTaskIndex].status === 'done' ? 'pending' : 'done';
+
+            if (db && TASKS[editingTaskIndex].id) {
+                await db.collection("tasks").doc(TASKS[editingTaskIndex].id).update({ status: newStatus });
+                TASKS[editingTaskIndex].status = newStatus;
+                openTaskDetail(editingTaskIndex);
+            } else {
+                TASKS[editingTaskIndex].status = newStatus;
+                openTaskDetail(editingTaskIndex);
+                renderTasks();
+            }
+        }
+
+        function closeTaskDetail() {
+            document.getElementById('task-detail-overlay').style.display = 'none';
+        }
+
+        async function saveTaskEdits() {
+            if (editingTaskIndex === -1) return;
+            const desc = document.getElementById('edit-desc').value;
+            const comment = document.getElementById('edit-comment').value;
+
+            if (db && TASKS[editingTaskIndex].id) {
+                await db.collection("tasks").doc(TASKS[editingTaskIndex].id).update({ desc, comment });
+                closeTaskDetail();
+            } else {
+                TASKS[editingTaskIndex].desc = desc;
+                TASKS[editingTaskIndex].comment = comment;
+                renderTasks();
+                closeTaskDetail();
+                alert('Task updated locally!');
+            }
+        }
+
+        function importTasks(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    const imported = JSON.parse(e.target.result);
+                    if (Array.isArray(imported)) {
+                        if (confirm(`Import ${imported.length} tasks? This will replace your current log.`)) {
+                            TASKS = imported;
+                            renderTasks();
+                        }
+                    } else {
+                        alert('Invalid JSON format');
+                    }
+                } catch (err) {
+                    alert('Error parsing JSON file');
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        // --- Multi-File Attachment System (IndexedDB & Firebase Storage) ---
+        const DB_NAME = 'uec_atlas_files';
+        const STORE_NAME = 'attachments';
+
+        function initIndexedDB() {
+            return new Promise((resolve, reject) => {
+                const request = indexedDB.open(DB_NAME, 1);
+                request.onupgradeneeded = (e) => {
+                    const db = e.target.result;
+                    if (!db.objectStoreNames.contains(STORE_NAME)) {
+                        db.createObjectStore(STORE_NAME, { keyPath: 'id' });
+                    }
+                };
+                request.onsuccess = (e) => resolve(e.target.result);
+                request.onerror = (e) => reject(e.target.error);
+            });
+        }
+
+        async function saveFileToIndexedDB(id, data, name, type) {
+            try {
+                const db = await initIndexedDB();
+                return new Promise((resolve, reject) => {
+                    const transaction = db.transaction(STORE_NAME, 'readwrite');
+                    const store = transaction.objectStore(STORE_NAME);
+                    const request = store.put({ id, data, name, type, timestamp: Date.now() });
+                    request.onsuccess = () => resolve(true);
+                    request.onerror = () => reject(request.error);
+                });
+            } catch (e) {
+                console.error("IndexedDB Save Error:", e);
+                return false;
+            }
+        }
+
+        async function getFileFromIndexedDB(id) {
+            try {
+                const db = await initIndexedDB();
+                return new Promise((resolve, reject) => {
+                    const transaction = db.transaction(STORE_NAME, 'readonly');
+                    const store = transaction.objectStore(STORE_NAME);
+                    const request = store.get(id);
+                    request.onsuccess = () => resolve(request.result);
+                    request.onerror = () => reject(request.error);
+                });
+            } catch (e) {
+                console.error("IndexedDB Read Error:", e);
+                return null;
+            }
+        }
+
+        async function retrieveFileFromIndexedDB(id, name, type) {
+            const record = await getFileFromIndexedDB(id);
+            if (!record) {
+                alert("Failed to retrieve file from local IndexedDB storage. It might have been uploaded on a different device.");
+                return;
+            }
+            const link = document.createElement('a');
+            link.href = record.data;
+            link.download = name;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        let selectedFiles = [];
+
+        function handleFileSelection(event) {
+            const files = Array.from(event.target.files);
+            addSelectedFiles(files);
+        }
+
+        function handleFileDrop(event) {
+            event.preventDefault();
+            const dropZone = document.getElementById('dropZone');
+            if (dropZone) {
+                dropZone.style.borderColor = 'var(--border)';
+                dropZone.style.background = '#fff';
+            }
+            if (event.dataTransfer.files) {
+                const files = Array.from(event.dataTransfer.files);
+                addSelectedFiles(files);
+            }
+        }
+
+        function addSelectedFiles(files) {
+            files.forEach(file => {
+                if (!selectedFiles.some(f => f.name === file.name && f.size === file.size)) {
+                    selectedFiles.push(file);
+                }
+            });
+            renderSelectedFilesList();
+        }
+
+        function removeSelectedFile(index) {
+            selectedFiles.splice(index, 1);
+            renderSelectedFilesList();
+        }
+
+        function renderSelectedFilesList() {
+            const listContainer = document.getElementById('selected-files-list');
+            if (!listContainer) return;
+            listContainer.innerHTML = '';
+            
+            selectedFiles.forEach((file, idx) => {
+                const sizeKB = (file.size / 1024).toFixed(1);
+                let icon = '📁';
+                if (file.type.includes('image/')) icon = '🖼️';
+                else if (file.type.includes('pdf')) icon = '📕';
+                else if (file.name.match(/\.(xls|xlsx|csv)$/i)) icon = '📗';
+                
+                const filePill = document.createElement('div');
+                filePill.style = "display:flex; align-items:center; gap:8px; background:#EEF5FC; border:1px solid var(--border); padding:6px 12px; border-radius:20px; font-size:0.75rem; color:var(--navy); font-weight:600;";
+                filePill.innerHTML = `
+                    <span>${icon}</span>
+                    <span style="max-width:180px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${file.name} (${sizeKB} KB)</span>
+                    <span onclick="removeSelectedFile(${idx})" style="color:#EF4444; font-weight:bold; cursor:pointer; margin-left:4px; font-size:0.9rem;" title="Remove">×</span>
+                `;
+                listContainer.appendChild(filePill);
+            });
+        }
+
+        async function processFileAttachment(file) {
+            const fileId = 'file_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+            const base64Data = await toBase64(file);
+            
+            // 1. Try Firebase Storage if online
+            if (db && firebase && storage) {
+                try {
+                    const storageRef = storage.ref();
+                    const fileRef = storageRef.child(`attachments/${fileId}_${file.name}`);
+                    const snapshot = await fileRef.put(file);
+                    const downloadUrl = await snapshot.ref.getDownloadURL();
+                    return {
+                        id: fileId,
+                        name: file.name,
+                        type: file.type,
+                        size: file.size,
+                        data: downloadUrl,
+                        storageType: 'firebase'
+                    };
+                } catch (e) {
+                    console.warn(`Firebase Storage upload failed for ${file.name}, falling back to local storage:`, e);
+                }
+            }
+            
+            // 2. Fallback to Local (Base64 inline if small, IndexedDB if large)
+            const isSmall = file.size < 150 * 1024; // 150 KB
+            if (isSmall) {
+                return {
+                    id: fileId,
+                    name: file.name,
+                    type: file.type,
+                    size: file.size,
+                    data: base64Data,
+                    storageType: 'inline'
+                };
+            } else {
+                const success = await saveFileToIndexedDB(fileId, base64Data, file.name, file.type);
+                if (success) {
+                    return {
+                        id: fileId,
+                        name: file.name,
+                        type: file.type,
+                        size: file.size,
+                        data: `indexeddb:${fileId}`,
+                        storageType: 'indexeddb'
+                    };
+                } else {
+                    console.warn("IndexedDB fallback failed. Storing inline.");
+                    return {
+                        id: fileId,
+                        name: file.name,
+                        type: file.type,
+                        size: file.size,
+                        data: base64Data,
+                        storageType: 'inline-overflow'
+                    };
+                }
+            }
+        }
+
+        function openAttachment(taskIndex, fileIdx, event) {
+            if (event) event.stopPropagation();
+            const task = TASKS[taskIndex];
+            if (!task.attachments || !task.attachments[fileIdx]) return;
+            const file = task.attachments[fileIdx];
+            
+            if (file.data.startsWith('indexeddb:')) {
+                const fileId = file.data.split(':')[1];
+                retrieveFileFromIndexedDB(fileId, file.name, file.type);
+            } else {
+                const link = document.createElement('a');
+                link.href = file.data;
+                link.download = file.name;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            }
+        }
+
+        function renderAttachmentsHTML(attachments, taskIndex) {
+            if (!attachments || attachments.length === 0) return '';
+            let html = `<div class="task-attachments-list" style="display:flex; flex-wrap:wrap; gap:8px; margin-top:10px;">`;
+            attachments.forEach((file, idx) => {
+                const isImg = file.type.startsWith('image/') || file.name.match(/\.(jpg|jpeg|png|gif|webp|svg)$/i);
+                if (isImg && !file.data.startsWith('indexeddb:')) {
+                    html += `
+                        <div class="attachment-preview-wrapper" style="position:relative; cursor:pointer;" onclick="openTaskDetail(${taskIndex})">
+                            <img src="${file.data}" style="max-height:60px; max-width:100px; border-radius:4px; border:1px solid #E2E8F0;" title="${file.name}">
+                        </div>
+                    `;
+                } else {
+                    let icon = '📁';
+                    if (file.type.includes('pdf') || file.name.endsWith('.pdf')) icon = '📕';
+                    else if (file.name.match(/\.(doc|docx)$/i)) icon = '📘';
+                    else if (file.name.match(/\.(xls|xlsx|csv)$/i)) icon = '📗';
+                    else if (file.name.match(/\.(zip|rar|tar|gz)$/i)) icon = '📦';
+                    else if (file.name.match(/\.(txt|md)$/i)) icon = '📄';
+                    
+                    html += `
+                        <div class="attachment-file-badge" onclick="openAttachment(${taskIndex}, ${idx}, event)" style="display:flex; align-items:center; gap:6px; background:#EEF5FC; border:1px solid var(--border); padding:4px 8px; border-radius:4px; font-size:0.7rem; color:var(--navy); font-weight:700; cursor:pointer;" title="Click to download: ${file.name}">
+                            <span>${icon}</span>
+                            <span style="max-width:120px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${file.name}</span>
+                            ${file.storageType === 'indexeddb' ? `<span style="font-size:0.6rem; color:#F59E0B; font-weight:normal;" title="This large file is saved locally in your browser and will not sync to other users.">(Local Only)</span>` : ''}
+                        </div>
+                    `;
+                }
+            });
+            html += `</div>`;
+            return html;
+        }
+
+        async function addTask() {
+            const desc = document.getElementById('taskDesc').value.trim();
+            const demander = document.getElementById('taskDemander').value.trim();
+            const label = document.getElementById('taskLabel').value;
+            const target = document.getElementById('taskTarget').value;
+            const comment = document.getElementById('taskComment').value;
+
+            if (!desc || !demander || !label) {
+                alert('ERROR: All mandatory fields (*) must be filled before adding a task.');
+                return;
+            }
+
+            const saveBtn = document.querySelector('.task-form .save-btn');
+            const originalText = saveBtn ? saveBtn.innerText : 'ADD TECHNICAL TASK TO REGISTRY';
+            if (saveBtn) {
+                saveBtn.innerText = 'PROCESSING & UPLOADING ATTACHMENTS...';
+                saveBtn.disabled = true;
+            }
+
+            let uploadedAttachments = [];
+            try {
+                if (selectedFiles.length > 0) {
+                    for (const file of selectedFiles) {
+                        const uploaded = await processFileAttachment(file);
+                        if (uploaded) {
+                            uploadedAttachments.push(uploaded);
+                        }
+                    }
+                }
+            } catch (uploadErr) {
+                console.error("Upload process error:", uploadErr);
+                alert("Error processing some attachments. The task will be submitted with whatever files succeeded.");
+            } finally {
+                if (saveBtn) {
+                    saveBtn.innerText = originalText;
+                    saveBtn.disabled = false;
+                }
+            }
+
+            const targetLabel = target ? target.split('|')[1] : '';
+            const targetPage = target ? target.split('|')[0] : '';
+            const targetTitle = target ? `${PAGES[targetPage].title} > ${targetLabel}` : 'Global Reference';
+
+            // Find first attached image to populate legacy task.img property for backwards compatibility
+            const firstImgAttach = uploadedAttachments.find(a => a.type.startsWith('image/'));
+            const imgBase64 = firstImgAttach ? firstImgAttach.data : '';
+
+            const newTask = {
+                desc,
+                demander,
+                label,
+                target: targetPage || null,
+                targetLabel: targetLabel,
+                targetTitle: targetTitle,
+                comment,
+                img: imgBase64,
+                attachments: uploadedAttachments,
+                status: 'pending',
+                time: new Date().toLocaleString()
+            };
+
+            if (db) {
+                try {
+                    await db.collection("tasks").add(newTask);
+                } catch (e) {
+                    console.error("Error adding task: ", e);
+                    alert("Firebase Write Error: " + e.message);
+                }
+            } else {
+                TASKS.unshift(newTask);
+                renderTasks();
+            }
+
+            // Reset form
+            document.getElementById('taskDesc').value = '';
+            document.getElementById('taskDemander').value = '';
+            document.getElementById('taskComment').value = '';
+            
+            // Reset selected files
+            selectedFiles = [];
+            renderSelectedFilesList();
+            const taskFilesInput = document.getElementById('taskFiles');
+            if (taskFilesInput) taskFilesInput.value = '';
+        }
+
+        const toBase64 = file => new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = () => resolve(reader.result);
+            reader.onerror = error => reject(error);
+        });
+
+        function toggleTask(index) {
+            TASKS[index].status = TASKS[index].status === 'done' ? 'pending' : 'done';
+            renderTasks();
+        }
+
+        async function deleteTask(index, id) {
+            if (confirm('Archive this task? It will be removed from the active log but kept in History.')) {
+                if (db && id) {
+                    await db.collection("tasks").doc(id).update({ status: 'deleted' });
+                } else {
+                    TASKS[index].status = 'deleted';
+                    renderTasks();
+                }
+            }
+        }
+
+        function populateTaskTargets() {
+            const select = document.getElementById('taskTarget');
+            Object.keys(PAGES).forEach(pid => {
+                const p = PAGES[pid];
+                const optGroup = document.createElement('optgroup');
+                optGroup.label = p.title;
+                p.blocks.forEach(b => {
+                    const opt = document.createElement('option');
+                    opt.value = `${pid}|${b.label}`;
+                    opt.innerText = b.label;
+                    optGroup.appendChild(opt);
+                });
+                select.appendChild(optGroup);
+            });
+        }
+
+        function jumpToTaskTarget(pid, label) {
+            jumpToWireframe(pid, label);
+        }
+
+        function exportTasks() {
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(TASKS, null, 2));
+            const downloadAnchorNode = document.createElement('a');
+            downloadAnchorNode.setAttribute("href", dataStr);
+            downloadAnchorNode.setAttribute("download", "uec_atlas_tasks.json");
+            document.body.appendChild(downloadAnchorNode);
+            downloadAnchorNode.click();
+            downloadAnchorNode.remove();
+        }
+
+        function exportTasksCSV() {
+            const headers = ["ID", "Status", "Timestamp", "Demander", "Category/Label", "Target Reference", "Description", "Feedback/Comments", "Attachments"];
+            const rows = TASKS.map(task => {
+                const targetRef = task.target ? `${task.targetTitle} (${task.target})` : 'Global';
+                
+                // Format attachments
+                let attachStr = '';
+                let attachments = task.attachments || [];
+                if (task.img && attachments.length === 0) {
+                    attachments = [{ name: 'attached_image.png', storageType: 'inline' }];
+                }
+                if (attachments.length > 0) {
+                    attachStr = attachments.map(a => `${a.name} (${a.storageType})`).join('; ');
+                }
+
+                return [
+                    task.id || '',
+                    task.status || '',
+                    task.time || '',
+                    task.demander || '',
+                    task.label || '',
+                    targetRef,
+                    task.desc || '',
+                    task.comment || '',
+                    attachStr
+                ];
+            });
+            const escapeCSV = (val) => {
+                if (val === null || val === undefined) return '';
+                let stringVal = String(val);
+                stringVal = stringVal.replace(/"/g, '""');
+                if (stringVal.includes(',') || stringVal.includes('"') || stringVal.includes('\n') || stringVal.includes('\r')) {
+                    return `"${stringVal}"`;
+                }
+                return stringVal;
+            };
+            const csvContent = [
+                headers.map(escapeCSV).join(','),
+                ...rows.map(row => row.map(escapeCSV).join(','))
+            ].join('\r\n');
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const downloadAnchorNode = document.createElement('a');
+            downloadAnchorNode.setAttribute("href", url);
+            downloadAnchorNode.setAttribute("download", "uec_atlas_tasks.csv");
+            document.body.appendChild(downloadAnchorNode);
+            downloadAnchorNode.click();
+            downloadAnchorNode.remove();
+            URL.revokeObjectURL(url);
+        }
+
+        function jumpToWireframe(pid, label) {
+            switchPage(pid);
+            setTimeout(() => {
+                const target = document.getElementById('wf-block-' + label.replace(/\s+/g, '-').toLowerCase());
+                if (target) {
+                    target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    target.classList.add('highlighted');
+                    setTimeout(() => target.classList.remove('highlighted'), 3000);
+                }
+            }, 100);
+        }
+
+        // Tooltip logic
+        const tooltip = document.getElementById('tooltip');
+        function showTooltip(e, title, spec) {
+            tooltip.innerHTML = `<span class="tooltip-header">${title} Specs</span>${spec.split('|').join('<br>')}`;
+            tooltip.style.display = 'block';
+            moveTooltip(e);
+        }
+        function moveTooltip(e) {
+            tooltip.style.left = (e.pageX + 15) + 'px';
+            tooltip.style.top = (e.pageY + 15) + 'px';
+        }
+        function hideTooltip() { tooltip.style.display = 'none'; }
+        document.body.onmousemove = moveTooltip;
+
+    </script>
+</body>
+
+</html>

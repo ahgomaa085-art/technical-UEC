@@ -2110,6 +2110,11 @@
                         canvas.height = height;
                         const ctx = canvas.getContext('2d');
                         ctx.drawImage(img, 0, 0, width, height);
+                        if (!canvas.toBlob) {
+                            console.warn("canvas.toBlob is not supported in this browser. Using original file.");
+                            resolve(file);
+                            return;
+                        }
                         canvas.toBlob((blob) => {
                             if (!blob) {
                                 resolve(file);
@@ -2377,7 +2382,7 @@
             const targetTitle = target ? `${PAGES[targetPage].title} > ${targetLabel}` : 'Global Reference';
 
             // Find first attached image to populate legacy task.img property for backwards compatibility
-            const firstImgAttach = uploadedAttachments.find(a => a.type.startsWith('image/'));
+            const firstImgAttach = uploadedAttachments.find(a => a.type && a.type.startsWith('image/'));
             const imgBase64 = firstImgAttach ? firstImgAttach.data : '';
 
             const newTask = {
@@ -2394,16 +2399,16 @@
                 time: new Date().toLocaleString()
             };
 
+            // Non-blocking optimistic update: render locally first
+            TASKS.unshift(newTask);
+            renderTasks();
+
             if (db) {
-                try {
-                    await db.collection("tasks").add(newTask);
-                } catch (e) {
-                    console.error("Error adding task: ", e);
-                    alert("Firebase Write Error: " + e.message);
-                }
-            } else {
-                TASKS.unshift(newTask);
-                renderTasks();
+                // Submit to Firebase in the background
+                db.collection("tasks").add(newTask).catch(e => {
+                    console.error("Error syncing task to Firebase: ", e);
+                    alert("Firebase Sync Warning: " + e.message + "\nYour task is saved locally in this browser.");
+                });
             }
 
             // Reset form

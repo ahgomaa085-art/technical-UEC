@@ -816,6 +816,13 @@
                                 <input type="date" id="history-filter-date" onchange="renderHistoryGrouped()" style="font-size: 0.75rem; padding: 4px; border-radius: 4px; border: 1px solid var(--border); outline: none; background: white; color: var(--navy); font-weight: 700;">
                                 <button onclick="clearHistoryDateFilter()" style="font-size: 0.7rem; background: var(--navy); color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-weight: 700; transition: 0.2s;">Clear</button>
                             </div>
+                            <!-- Demander Filter -->
+                            <div style="display: flex; gap: 8px; align-items: center; background: #EEF5FC; padding: 6px 12px; border-radius: 8px; border: 1px solid var(--border);">
+                                <label style="font-size: 0.75rem; font-weight: 700; color: var(--navy); margin: 0;">Filter Demander:</label>
+                                <select id="history-filter-demander" onchange="renderHistoryGrouped()" style="font-size: 0.75rem; padding: 4px; border-radius: 4px; border: 1px solid var(--border); outline: none; background: white; color: var(--navy); font-weight: 700; max-width: 150px; cursor: pointer;">
+                                    <option value="">All Demanders</option>
+                                </select>
+                            </div>
                             <button onclick="exportTasks()"
                                 style="padding:8px 16px; border-radius:6px; border:1px solid var(--navy); background:none; font-weight:700; cursor:pointer;">Export JSON</button>
                             
@@ -1342,7 +1349,37 @@
         function clearHistoryDateFilter() {
             const dateInput = document.getElementById('history-filter-date');
             if (dateInput) dateInput.value = '';
+            const demanderSelect = document.getElementById('history-filter-demander');
+            if (demanderSelect) demanderSelect.value = '';
             renderHistoryGrouped();
+        }
+
+        function populateDemanderFilter() {
+            const select = document.getElementById('history-filter-demander');
+            if (!select) return;
+            const currentSelection = select.value;
+            select.innerHTML = '<option value="">All Demanders</option>';
+            
+            const demanders = new Set();
+            TASKS.forEach(task => {
+                if (task.demander) {
+                    demanders.add(task.demander.trim());
+                }
+            });
+            
+            Array.from(demanders).sort().forEach(d => {
+                const opt = document.createElement('option');
+                opt.value = d;
+                opt.innerText = d;
+                select.appendChild(opt);
+            });
+            
+            if (currentSelection) {
+                const exists = Array.from(select.options).some(opt => opt.value === currentSelection);
+                if (exists) {
+                    select.value = currentSelection;
+                }
+            }
         }
 
         function renderHistoryGrouped() {
@@ -1351,11 +1388,13 @@
             container.innerHTML = '';
 
             const filterDate = document.getElementById('history-filter-date') ? document.getElementById('history-filter-date').value : '';
+            const filterDemander = document.getElementById('history-filter-demander') ? document.getElementById('history-filter-demander').value.trim() : '';
 
             const groups = {};
             TASKS.forEach((task, idx) => {
                 const dateKey = getTaskDate(task);
                 if (filterDate && dateKey !== filterDate) return;
+                if (filterDemander && (!task.demander || task.demander.trim() !== filterDemander)) return;
 
                 if (!groups[dateKey]) {
                     groups[dateKey] = [];
@@ -1450,7 +1489,12 @@
         }
 
         function exportSingleDayReport(date, format) {
-            const filtered = TASKS.filter(task => getTaskDate(task) === date);
+            const filterDemander = document.getElementById('history-filter-demander') ? document.getElementById('history-filter-demander').value.trim() : '';
+            const filtered = TASKS.filter(task => {
+                const matchDate = getTaskDate(task) === date;
+                const matchDemander = !filterDemander || (task.demander && task.demander.trim() === filterDemander);
+                return matchDate && matchDemander;
+            });
             let niceDate = date;
             try {
                 const parsedDate = new Date(date + 'T00:00:00');
@@ -1469,6 +1513,7 @@
         function exportReport(type, format) {
             let filteredTasks = [];
             let dateLabel = '';
+            const filterDemander = document.getElementById('history-filter-demander') ? document.getElementById('history-filter-demander').value.trim() : '';
 
             if (type === 'daily') {
                 const filterDate = document.getElementById('history-filter-date') ? document.getElementById('history-filter-date').value : '';
@@ -1480,12 +1525,20 @@
                     const recentDate = getTaskDate(TASKS[0]);
                     const parsedDate = new Date(recentDate + 'T00:00:00');
                     dateLabel = isNaN(parsedDate.getTime()) ? recentDate : parsedDate.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
-                    filteredTasks = TASKS.filter(task => getTaskDate(task) === recentDate);
-                    alert(`No day selected in the filter. Generating daily report for the most recent day: ${dateLabel}`);
+                    filteredTasks = TASKS.filter(task => {
+                        const matchDate = getTaskDate(task) === recentDate;
+                        const matchDemander = !filterDemander || (task.demander && task.demander.trim() === filterDemander);
+                        return matchDate && matchDemander;
+                    });
+                    alert(`No day selected in the filter. Generating daily report for the most recent day: ${dateLabel}${filterDemander ? ' (Demander: ' + filterDemander + ')' : ''}`);
                 } else {
                     const parsedDate = new Date(filterDate + 'T00:00:00');
                     dateLabel = isNaN(parsedDate.getTime()) ? filterDate : parsedDate.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
-                    filteredTasks = TASKS.filter(task => getTaskDate(task) === filterDate);
+                    filteredTasks = TASKS.filter(task => {
+                        const matchDate = getTaskDate(task) === filterDate;
+                        const matchDemander = !filterDemander || (task.demander && task.demander.trim() === filterDemander);
+                        return matchDate && matchDemander;
+                    });
                 }
             } else if (type === 'weekly') {
                 const oneWeekAgo = new Date();
@@ -1493,11 +1546,13 @@
                 
                 filteredTasks = TASKS.filter(task => {
                     const taskDate = new Date(getTaskDate(task));
-                    return !isNaN(taskDate.getTime()) && taskDate >= oneWeekAgo;
+                    const matchDate = !isNaN(taskDate.getTime()) && taskDate >= oneWeekAgo;
+                    const matchDemander = !filterDemander || (task.demander && task.demander.trim() === filterDemander);
+                    return matchDate && matchDemander;
                 });
                 
                 if (filteredTasks.length === 0) {
-                    filteredTasks = TASKS;
+                    filteredTasks = TASKS.filter(task => !filterDemander || (task.demander && task.demander.trim() === filterDemander));
                     dateLabel = "All Tasks Summary (Fallback)";
                 } else {
                     dateLabel = `Last 7 Days (Since ${oneWeekAgo.toLocaleDateString()})`;
@@ -1551,7 +1606,8 @@
                 doc.setFontSize(9);
                 doc.setTextColor(110, 101, 168);
                 doc.text(`Report Generated: ${new Date().toLocaleString()}`, 15, 54);
-                doc.text(`Filtered Scope: ${dateLabel}`, 15, 59);
+                const filterDemander = document.getElementById('history-filter-demander') ? document.getElementById('history-filter-demander').value.trim() : '';
+                doc.text(`Filtered Scope: ${dateLabel}${filterDemander ? ` (Demander: ${filterDemander})` : ''}`, 15, 59);
                 
                 const total = filteredTasks.length;
                 const done = filteredTasks.filter(t => t.status === 'done').length;
@@ -1612,7 +1668,8 @@
                     margin: { left: 15, right: 15 }
                 });
                 
-                doc.save(`uec_${reportType}_report_${dateLabel.replace(/[\s,\/:]+/g, '_')}.pdf`);
+                const demanderPart = filterDemander ? `_${filterDemander.replace(/[\s,\/:]+/g, '_')}` : '';
+                doc.save(`uec_${reportType}_report${demanderPart}_${dateLabel.replace(/[\s,\/:]+/g, '_')}.pdf`);
             } catch (pdfErr) {
                 console.error("PDF generation failed:", pdfErr);
                 alert("PDF generation failed. Please check console (F12) for details.");
@@ -1621,6 +1678,7 @@
 
         function exportReportWord(reportType, filteredTasks, dateLabel) {
             try {
+                const filterDemander = document.getElementById('history-filter-demander') ? document.getElementById('history-filter-demander').value.trim() : '';
                 const total = filteredTasks.length;
                 const done = filteredTasks.filter(t => t.status === 'done').length;
                 const pending = filteredTasks.filter(t => t.status === 'pending').length;
@@ -1700,7 +1758,7 @@
                             </tr>
                             <tr>
                                 <td style="font-weight: bold;">Target Scope:</td>
-                                <td>${dateLabel}</td>
+                                <td>${dateLabel}${filterDemander ? ` (Demander: ${filterDemander})` : ''}</td>
                             </tr>
                         </table>
                         
@@ -1739,7 +1797,8 @@
                 const url = URL.createObjectURL(blob);
                 const link = document.createElement('a');
                 link.href = url;
-                link.download = `uec_${reportType}_report_${dateLabel.replace(/[\s,\/:]+/g, '_')}.doc`;
+                const demanderPart = filterDemander ? `_${filterDemander.replace(/[\s,\/:]+/g, '_')}` : '';
+                link.download = `uec_${reportType}_report${demanderPart}_${dateLabel.replace(/[\s,\/:]+/g, '_')}.doc`;
                 document.body.appendChild(link);
                 link.click();
                 document.body.removeChild(link);
@@ -1788,6 +1847,9 @@
 
             if (!fromDB) localStorage.setItem('uec_tasks', JSON.stringify(TASKS));
             document.getElementById('btn-log').innerText = `Technical Task Log (${pendingCount})`;
+            
+            // Populate demander dropdown options
+            populateDemanderFilter();
         }
 
         let editingTaskIndex = -1;
@@ -2415,8 +2477,11 @@
         }
 
         function exportTasksCSV() {
+            const filterDemander = document.getElementById('history-filter-demander') ? document.getElementById('history-filter-demander').value.trim() : '';
+            const filteredTasks = TASKS.filter(task => !filterDemander || (task.demander && task.demander.trim() === filterDemander));
+
             const headers = ["ID", "Status", "Timestamp", "Demander", "Category/Label", "Target Reference", "Description", "Feedback/Comments", "Attachments"];
-            const rows = TASKS.map(task => {
+            const rows = filteredTasks.map(task => {
                 const targetRef = task.target ? `${task.targetTitle} (${task.target})` : 'Global';
                 
                 // Format attachments
@@ -2458,7 +2523,8 @@
             const url = URL.createObjectURL(blob);
             const downloadAnchorNode = document.createElement('a');
             downloadAnchorNode.setAttribute("href", url);
-            downloadAnchorNode.setAttribute("download", "uec_atlas_tasks.csv");
+            const filename = filterDemander ? `uec_atlas_tasks_${filterDemander.replace(/[\s,\/:]+/g, '_')}.csv` : "uec_atlas_tasks.csv";
+            downloadAnchorNode.setAttribute("download", filename);
             document.body.appendChild(downloadAnchorNode);
             downloadAnchorNode.click();
             downloadAnchorNode.remove();

@@ -2221,13 +2221,23 @@
             const fileId = 'file_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
             const base64Data = await toBase64(file);
             
-            // 1. Try Firebase Storage if online
+            // 1. Try Firebase Storage if online (with 5-second timeout to prevent hanging)
             if (db && firebase && storage) {
                 try {
-                    const storageRef = storage.ref();
-                    const fileRef = storageRef.child(`attachments/${fileId}_${file.name}`);
-                    const snapshot = await fileRef.put(file);
-                    const downloadUrl = await snapshot.ref.getDownloadURL();
+                    const storageUpload = new Promise(async (resolve, reject) => {
+                        try {
+                            const storageRef = storage.ref();
+                            const fileRef = storageRef.child(`attachments/${fileId}_${file.name}`);
+                            const snapshot = await fileRef.put(file);
+                            const downloadUrl = await snapshot.ref.getDownloadURL();
+                            resolve(downloadUrl);
+                        } catch (e) {
+                            reject(e);
+                        }
+                    });
+                    const timeout = new Promise((_, reject) => setTimeout(() => reject(new Error('Storage upload timed out after 5s')), 5000));
+                    
+                    const downloadUrl = await Promise.race([storageUpload, timeout]);
                     return {
                         id: fileId,
                         name: file.name,
@@ -2237,44 +2247,19 @@
                         storageType: 'firebase'
                     };
                 } catch (e) {
-                    console.warn(`Firebase Storage upload failed for ${file.name}, falling back to local storage:`, e);
+                    console.warn(`Firebase Storage upload failed for ${file.name}, falling back to inline base64:`, e.message || e);
                 }
             }
             
-            // 2. Fallback to Local (Base64 inline if small, IndexedDB if large)
-            const isSmall = file.size < 150 * 1024; // 150 KB
-            if (isSmall) {
-                return {
-                    id: fileId,
-                    name: file.name,
-                    type: file.type,
-                    size: file.size,
-                    data: base64Data,
-                    storageType: 'inline'
-                };
-            } else {
-                const success = await saveFileToIndexedDB(fileId, base64Data, file.name, file.type);
-                if (success) {
-                    return {
-                        id: fileId,
-                        name: file.name,
-                        type: file.type,
-                        size: file.size,
-                        data: `indexeddb:${fileId}`,
-                        storageType: 'indexeddb'
-                    };
-                } else {
-                    console.warn("IndexedDB fallback failed. Storing inline.");
-                    return {
-                        id: fileId,
-                        name: file.name,
-                        type: file.type,
-                        size: file.size,
-                        data: base64Data,
-                        storageType: 'inline-overflow'
-                    };
-                }
-            }
+            // 2. Fallback: always store as inline base64 (images are pre-compressed to ~50-120KB)
+            return {
+                id: fileId,
+                name: file.name,
+                type: file.type,
+                size: file.size,
+                data: base64Data,
+                storageType: 'inline'
+            };
         }
 
         function openAttachment(taskIndex, fileIdx, event) {

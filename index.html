@@ -2404,8 +2404,35 @@
             renderTasks();
 
             if (db) {
+                // Build a Firestore-safe version of the task (strip large base64 data to stay under 1MB doc limit)
+                const firestoreTask = { ...newTask };
+                
+                // Strip the legacy img field if it contains large base64 data
+                if (firestoreTask.img && firestoreTask.img.length > 500 && firestoreTask.img.startsWith('data:')) {
+                    firestoreTask.img = ''; // Clear for Firestore; local copy in TASKS still has it
+                }
+                
+                // Strip large inline base64 data from attachments for Firestore
+                if (firestoreTask.attachments && firestoreTask.attachments.length > 0) {
+                    firestoreTask.attachments = firestoreTask.attachments.map(att => {
+                        if (att.storageType === 'inline' && att.data && att.data.length > 200000) {
+                            // Too large for Firestore doc; save metadata only
+                            return { ...att, data: '', storageType: 'inline-stripped', originalSize: att.data.length };
+                        }
+                        if (att.storageType === 'indexeddb') {
+                            // IndexedDB references are small pointers, safe to keep
+                            return att;
+                        }
+                        if (att.storageType === 'firebase') {
+                            // Firebase Storage URLs are small, safe to keep
+                            return att;
+                        }
+                        return att;
+                    });
+                }
+
                 // Submit to Firebase in the background
-                db.collection("tasks").add(newTask).catch(e => {
+                db.collection("tasks").add(firestoreTask).catch(e => {
                     console.error("Error syncing task to Firebase: ", e);
                     alert("Firebase Sync Warning: " + e.message + "\nYour task is saved locally in this browser.");
                 });
